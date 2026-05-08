@@ -24,13 +24,13 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def open_browser():
     time.sleep(0.5)
     url = f"http://localhost:{PORT}"
-    print(f"Открываем {url} ...")
+    print(f"Opening {url} ...")
     webbrowser.open(url)
 
 if __name__ == "__main__":
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print(f"\n🛩️  PaperPlane сервер запущен на http://localhost:{PORT}")
-        print("Нажмите Ctrl+C для остановки\n")
+        print(f"\n[PaperPlane] Server started at http://localhost:{PORT}")
+        print("Press Ctrl+C to stop\n")
         
         threading.Thread(target=open_browser, daemon=True).start()
         
