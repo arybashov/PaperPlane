@@ -6,282 +6,465 @@
     <title>PaperPlane — Аэродинамика бумажного самолётика</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #eaeaea;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a12;
+            color: #e0e0e0;
             overflow: hidden;
             height: 100vh;
             display: flex;
         }
 
+        /* Sidebar */
         #sidebar {
-            width: 320px;
-            min-width: 320px;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            padding: 24px;
+            width: 300px;
+            min-width: 300px;
+            background: linear-gradient(180deg, #12121a 0%, #0d0d14 100%);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
-        h1 {
+        #sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        #sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #e94560, #ff6b81);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 20px;
-            color: #e94560;
-            margin-bottom: 4px;
+            transform: rotate(-15deg);
         }
 
-        h2 {
-            font-size: 13px;
-            color: #a0a0a0;
-            font-weight: 400;
-            margin-bottom: 16px;
+        .logo h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+        }
+
+        .logo span {
+            font-size: 11px;
+            color: #666;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            color: #555;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            margin: 12px 0 6px;
+            font-weight: 600;
         }
 
         .control-group {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.02);
             border-radius: 8px;
-            padding: 12px;
-            border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.2s;
+        }
+
+        .control-group:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.08);
         }
 
         .control-group label {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 12px;
-            color: #b0b0b0;
-            margin-bottom: 6px;
+            color: #888;
+            margin-bottom: 8px;
         }
 
         .control-group label span.value {
-            color: #e94560;
+            color: #4ecca3;
             font-weight: 600;
-            font-family: 'Courier New', monospace;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 13px;
         }
 
         input[type="range"] {
             width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255,255,255,0.1);
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.08);
             outline: none;
             -webkit-appearance: none;
+            cursor: pointer;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: #e94560;
+            background: #4ecca3;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+            box-shadow: 0 0 10px rgba(78, 204, 163, 0.4);
+            transition: transform 0.15s;
         }
 
-        .buttons {
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #1a1a24;
+            color: #e0e0e0;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            background: #222230;
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        select:focus {
+            border-color: #4ecca3;
+            box-shadow: 0 0 0 2px rgba(78, 204, 163, 0.15);
+        }
+
+        select option {
+            background: #1a1a24;
+            color: #e0e0e0;
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        select option:checked {
+            background: #4ecca3;
+            color: #000;
+        }
+
+        .btn-row {
             display: flex;
             gap: 8px;
-            margin-top: 8px;
         }
 
         button {
             flex: 1;
-            padding: 10px 16px;
+            padding: 10px 14px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        button#launch {
-            background: #e94560;
+        button.primary {
+            background: linear-gradient(135deg, #e94560, #d63850);
             color: white;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
         }
-        button#launch:hover { background: #ff6b81; transform: translateY(-1px); }
 
-        button#clear {
+        button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        button.secondary {
+            background: rgba(255,255,255,0.06);
+            color: #aaa;
+        }
+
+        button.secondary:hover {
             background: rgba(255,255,255,0.1);
-            color: #eaeaea;
+            color: #fff;
         }
-        button#clear:hover { background: rgba(255,255,255,0.2); }
 
-        .stats {
+        button.accent {
+            background: linear-gradient(135deg, #4ecca3, #3db892);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(78, 204, 163, 0.25);
+        }
+
+        button.accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 204, 163, 0.35);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .stats-panel {
             background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.8;
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: auto;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .stats .stat-row {
+        .stats-panel h3 {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .stat-item {
             display: flex;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding: 2px 0;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
         }
 
-        .stats .stat-label { color: #888; }
-        .stats .stat-value { color: #4ecca3; }
-
-        .divider {
-            height: 1px;
-            background: rgba(255,255,255,0.1);
-            margin: 8px 0;
+        .stat-item:last-child {
+            border-bottom: none;
         }
 
-        #canvas-container {
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4ecca3;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+
+        #opt-status {
+            font-size: 11px;
+            color: #888;
+            margin-top: 8px;
+            line-height: 1.5;
+            padding: 8px;
+            background: rgba(78, 204, 163, 0.1);
+            border-radius: 6px;
+            display: none;
+        }
+
+        #opt-status.show {
+            display: block;
+        }
+
+        /* 3D Container */
+        #scene-container {
             flex: 1;
             position: relative;
             overflow: hidden;
+            background: #0a0a12;
         }
 
-        canvas {
+        #scene-container canvas {
             display: block;
-            width: 100%;
-            height: 100%;
         }
 
-        .legend {
+        /* HUD */
+        .hud {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .hud-item {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .hud-item strong {
+            color: #4ecca3;
+            font-weight: 600;
+        }
+
+        /* Controls hint */
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
             background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            padding: 10px 14px;
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
             border-radius: 8px;
             font-size: 11px;
-            color: #aaa;
-            line-height: 1.6;
+            color: #555;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .legend-item { display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .dot.plane { background: #e94560; }
-        .dot.trail { background: #4ecca3; }
-        .dot.vel { background: #ffd700; }
-
-        #three-container {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: none;
+        .controls-hint span {
+            color: #888;
         }
     </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script>
-if (typeof OrbitControls !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
-    THREE.OrbitControls = OrbitControls;
-}
-</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        if (typeof OrbitControls !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
+            THREE.OrbitControls = OrbitControls;
+        }
+    </script>
 </head>
 <body>
 
 <div id="sidebar">
-    <h1>PaperPlane</h1>
-    <h2>Аэродинамическая симуляция</h2>
+    <div class="logo">
+        <div class="logo-icon">✈</div>
+        <div>
+            <h1>PaperPlane</h1>
+            <span>Аэродинамическая симуляция</span>
+        </div>
+    </div>
 
-    <button id="toggle-view" style="width:100%; padding:8px; margin-bottom:8px; background:#4ecca3; color:#000; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Переключить на 3D</button>
+    <div class="section-title">Параметры запуска</div>
 
     <div class="control-group">
-        <label>Начальная скорость, м/с <span class="value" id="val-v0">12</span></label>
+        <label>Начальная скорость <span class="value" id="val-v0">12 м/с</span></label>
         <input type="range" id="v0" min="2" max="25" step="0.5" value="12">
     </div>
 
     <div class="control-group">
-        <label>Угол броска, град <span class="value" id="val-angle">15</span></label>
+        <label>Угол броска <span class="value" id="val-angle">15°</span></label>
         <input type="range" id="angle" min="-30" max="60" step="1" value="15">
     </div>
 
     <div class="control-group">
-        <label>Высота броска, м <span class="value" id="val-h0">10</span></label>
+        <label>Высота броска <span class="value" id="val-h0">10 м</span></label>
         <input type="range" id="h0" min="1" max="50" step="1" value="10">
     </div>
 
-    <div class="divider"></div>
+    <div class="section-title">Аэродинамика</div>
 
     <div class="control-group">
-        <label>Масса, г <span class="value" id="val-mass">5</span></label>
+        <label>Масса <span class="value" id="val-mass">5 г</span></label>
         <input type="range" id="mass" min="1" max="20" step="0.5" value="5">
     </div>
 
     <div class="control-group">
-        <label>Площадь крыла, дм² <span class="value" id="val-area">1.0</span></label>
+        <label>Площадь крыла <span class="value" id="val-area">1.0 дм²</span></label>
         <input type="range" id="area" min="0.3" max="3.0" step="0.1" value="1.0">
     </div>
 
-    <div class="divider"></div>
-
     <div class="control-group">
-        <label>C<sub>L</sub> (подъёмная сила) <span class="value" id="val-cl">0.50</span></label>
+        <label>Подъёмная сила (C<sub>L</sub>) <span class="value" id="val-cl">0.50</span></label>
         <input type="range" id="cl" min="0.1" max="1.2" step="0.05" value="0.50">
     </div>
 
     <div class="control-group">
-        <label>C<sub>D</sub> (сопротивление) <span class="value" id="val-cd">0.15</span></label>
+        <label>Сопротивление (C<sub>D</sub>) <span class="value" id="val-cd">0.15</span></label>
         <input type="range" id="cd" min="0.05" max="0.5" step="0.01" value="0.15">
     </div>
 
     <div class="control-group">
-        <label>Аero качество K = L/D <span class="value" id="val-k">3.33</span></label>
-        <input type="range" id="k" min="1" max="10" step="0.1" value="3.33" disabled style="opacity:0.5;">
+        <label>Качество K = C<sub>L</sub>/C<sub>D</sub> <span class="value" id="val-k">3.33</span></label>
+        <input type="range" id="k" min="1" max="10" step="0.1" value="3.33" disabled style="opacity:0.4;">
     </div>
 
-    <div class="divider"></div>
+    <div class="section-title">Конфигурация</div>
 
     <div class="control-group">
-        <label>Форма самолётика</label>
-        <select id="shape" style="width:100%; padding:6px; border-radius:4px; background:rgba(255,255,255,0.1); color:#eaeaea; border:1px solid rgba(255,255,255,0.2);">
-            <option value="custom">Своя (слайдеры)</option>
-            <option value="dart">Стрелка (быстрый)</option>
-            <option value="glider">Планер (дальний)</option>
-            <option value="delta">Дельта (стабильный)</option>
+        <label style="margin-bottom:10px;">Форма самолётика</label>
+        <select id="shape">
+            <option value="custom">✏️ Своя конфигурация</option>
+            <option value="dart">🎯 Стрелка (быстрый)</option>
+            <option value="glider">🦅 Планер (дальний)</option>
+            <option value="delta">🔺 Дельта (стабильный)</option>
         </select>
     </div>
 
     <div class="control-group">
-        <label>Ветер, м/с <span class="value" id="val-wind">0.0</span></label>
+        <label>Ветер <span class="value" id="val-wind">0 м/с</span></label>
         <input type="range" id="wind" min="-15" max="15" step="0.5" value="0">
     </div>
 
     <div class="control-group">
-        <label>Турбулентность <span class="value" id="val-turb">0.0</span></label>
-        <input type="range" id="turb" min="0" max="2" step="0.1" value="0">
+        <label>Турбулентность <span class="value" id="val-turb">0.5</span></label>
+        <input type="range" id="turb" min="0" max="2" step="0.1" value="0.5">
     </div>
 
-    <div class="buttons">
-        <button id="launch">Запуск</button>
-        <button id="clear">Сброс</button>
+    <div class="btn-row">
+        <button class="primary" id="launch">🚀 Запуск</button>
+        <button class="secondary" id="clear">↺ Сброс</button>
     </div>
 
-    <div class="buttons" style="margin-top:8px;">
-        <button id="optimize" style="background:#4ecca3; color:#000;">Оптимизация</button>
-    </div>
-    <div id="opt-status" style="font-size:11px; color:#aaa; margin-top:4px; line-height:1.4;"></div>
+    <button class="accent" id="optimize" style="width:100%; margin-top:4px;">⚡ Оптимизация</button>
+    <div id="opt-status"></div>
 
-    <div class="stats" id="stats">
-        <div class="stat-row"><span class="stat-label">Дальность:</span><span class="stat-value" id="s-distance">—</span></div>
-        <div class="stat-row"><span class="stat-label">Время полёта:</span><span class="stat-value" id="s-time">—</span></div>
-        <div class="stat-row"><span class="stat-label">Конечная скорость:</span><span class="stat-value" id="s-vfinal">—</span></div>
-        <div class="stat-row"><span class="stat-label">Макс. высота:</span><span class="stat-value" id="s-hmax">—</span></div>
+    <div class="stats-panel">
+        <h3>Результаты полёта</h3>
+        <div class="stat-item">
+            <span class="stat-label">Дальность (X)</span>
+            <span class="stat-value" id="s-distance">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Боковое отклонение (Z)</span>
+            <span class="stat-value" id="s-zoffset">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Время полёта</span>
+            <span class="stat-value" id="s-time">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Макс. высота</span>
+            <span class="stat-value" id="s-hmax">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Конечная скорость</span>
+            <span class="stat-value" id="s-vfinal">—</span>
+        </div>
     </div>
 </div>
 
-<div id="canvas-container">
-    <canvas id="simCanvas"></canvas>
-    <div id="three-container"></div>
-    <div class="legend">
-        <div class="legend-item"><div class="dot plane"></div>Самолётик</div>
-        <div class="legend-item"><div class="dot trail"></div>Траектория</div>
-        <div class="legend-item"><div class="dot vel"></div>Вектор скорости</div>
+<div id="scene-container">
+    <div class="hud">
+        <div class="hud-item">Скорость: <strong id="hud-speed">— м/с</strong></div>
+        <div class="hud-item">Высота: <strong id="hud-alt">— м</strong></div>
+        <div class="hud-item">Отклонение Z: <strong id="hud-z">— м</strong></div>
+    </div>
+    <div class="controls-hint">
+        <span>🖱 ЛКМ</span> вращать · <span>🖱 ПКМ</span> двигать · <span>🖱 Колёсико</span> зум
     </div>
 </div>
 
@@ -290,26 +473,14 @@ if (typeof OrbitControls !== 'undefined' && typeof THREE.OrbitControls === 'unde
 // ФИЗИЧЕСКАЯ МОДЕЛЬ БУМАЖНОГО САМОЛЁТИКА
 // ==========================================
 
-const canvas = document.getElementById('simCanvas');
-const ctx = canvas.getContext('2d');
-
-// Параметры среды
 const RHO = 1.225; // кг/м³
 const G = 9.81;
 
-// Масштаб: пикселей на метр
-let scale = 20; // 20 px = 1 meter
-let offsetX = 50;
-let offsetY = 50;
-
-// Состояние симуляции
 let plane = null;
 let trails = [];
 let isRunning = false;
 let lastTime = 0;
-let simTime = 0;
 
-// Настройки
 let params = {
     v0: 12,
     angle: 15,
@@ -319,314 +490,317 @@ let params = {
     CL: 0.50,
     CD: 0.15,
     wind: 0.0,
-    turb: 0.0,
+    turb: 0.5,
     shape: 'custom'
 };
 
-// Пресеты форм
 const SHAPES = {
-    dart:  { mass:4, area:0.8, CL:0.45, CD:0.22, name:'Стрелка' },
-    glider: { mass:6, area:1.5, CL:0.65, CD:0.10, name:'Планер' },
-    delta:  { mass:5, area:1.2, CL:0.55, CD:0.15, name:'Дельта' }
+    dart:  { mass:4, area:0.8, CL:0.45, CD:0.22 },
+    glider: { mass:6, area:1.5, CL:0.65, CD:0.10 },
+    delta:  { mass:5, area:1.2, CL:0.55, CD:0.15 }
 };
 
-function resize() {
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
-    // Автомасштабирование чтобы вместить полёт ~100м
-    scale = Math.min(canvas.width / 60, canvas.height / 35);
-    offsetX = 60;
-    offsetY = canvas.height - 60;
-    draw();
-}
-window.addEventListener('resize', resize);
+// ==========================================
+// THREE.JS SCENE
+// ==========================================
 
-function worldToScreen(x, y) {
-    return {
-        x: offsetX + x * scale,
-        y: offsetY - y * scale
-    };
+let scene, camera, renderer, controls;
+let planeMesh, trailLine, gridHelper;
+let sceneInitialized = false;
+
+function initScene() {
+    if (sceneInitialized) return;
+    
+    const container = document.getElementById('scene-container');
+    
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a12);
+    scene.fog = new THREE.FogExp2(0x0a0a12, 0.008);
+    
+    // Camera
+    camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(25, 30, 40);
+    
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+    
+    // Controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+    controls.minDistance = 5;
+    controls.maxDistance = 150;
+    controls.target.set(15, 5, 0);
+    
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    
+    const hemiLight = new THREE.HemisphereLight(0x4ecca3, 0x1a2f23, 0.3);
+    scene.add(hemiLight);
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(50, 80, 30);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 10;
+    dirLight.shadow.camera.far = 200;
+    dirLight.shadow.camera.left = -80;
+    dirLight.shadow.camera.right = 80;
+    dirLight.shadow.camera.top = 80;
+    dirLight.shadow.camera.bottom = -80;
+    scene.add(dirLight);
+    
+    // Ground
+    const groundGeo = new THREE.PlaneGeometry(400, 400);
+    const groundMat = new THREE.MeshStandardMaterial({ 
+        color: 0x0d1a14,
+        roughness: 0.9,
+        metalness: 0.1
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // Grid
+    gridHelper = new THREE.GridHelper(200, 50, 0x1a3d2e, 0x0f1f18);
+    gridHelper.position.y = 0.01;
+    scene.add(gridHelper);
+    
+    // Distance markers
+    for (let d = 0; d <= 100; d += 10) {
+        const markerGeo = new THREE.PlaneGeometry(0.5, 0.5);
+        const markerMat = new THREE.MeshBasicMaterial({ 
+            color: 0x4ecca3, 
+            transparent: true, 
+            opacity: 0.6 
+        });
+        const marker = new THREE.Mesh(markerGeo, markerMat);
+        marker.rotation.x = -Math.PI / 2;
+        marker.position.set(d, 0.02, 0);
+        scene.add(marker);
+    }
+    
+    // Paper plane model
+    createPlaneModel();
+    
+    // Trail line
+    const trailGeo = new THREE.BufferGeometry();
+    const trailMat = new THREE.LineBasicMaterial({ 
+        color: 0x4ecca3,
+        transparent: true,
+        opacity: 0.8
+    });
+    trailLine = new THREE.Line(trailGeo, trailMat);
+    scene.add(trailLine);
+    
+    // Old trails
+    window.oldTrailLines = [];
+    
+    sceneInitialized = true;
 }
 
-function screenToWorld(sx, sy) {
-    return {
-        x: (sx - offsetX) / scale,
-        y: (offsetY - sy) / scale
-    };
+function createPlaneModel() {
+    const planeGroup = new THREE.Group();
+    
+    // Main body - sleek cone
+    const bodyGeo = new THREE.ConeGeometry(0.25, 2, 4);
+    const bodyMat = new THREE.MeshStandardMaterial({ 
+        color: 0xe94560,
+        roughness: 0.3,
+        metalness: 0.5,
+        flatShading: true
+    });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.rotation.z = -Math.PI / 2;
+    body.position.x = 0.5;
+    body.castShadow = true;
+    planeGroup.add(body);
+    
+    // Wings
+    const wingGeo = new THREE.BoxGeometry(0.8, 0.03, 2);
+    const wingMat = new THREE.MeshStandardMaterial({ 
+        color: 0xff6b81,
+        roughness: 0.4,
+        metalness: 0.3,
+        flatShading: true
+    });
+    const wings = new THREE.Mesh(wingGeo, wingMat);
+    wings.position.set(-0.2, 0.05, 0);
+    wings.castShadow = true;
+    planeGroup.add(wings);
+    
+    // Tail vertical
+    const tailGeo = new THREE.BoxGeometry(0.5, 0.5, 0.03);
+    const tail = new THREE.Mesh(tailGeo, wingMat);
+    tail.position.set(-1, 0.25, 0);
+    tail.castShadow = true;
+    planeGroup.add(tail);
+    
+    planeMesh = planeGroup;
+    scene.add(planeMesh);
 }
 
-// Класс бумажного самолётика
+// ==========================================
+// PHYSICS - 3D
+// ==========================================
+
 class PaperPlane {
     constructor(v0, angleDeg, h0, mass, area, CL, CD) {
         const angle = angleDeg * Math.PI / 180;
+        // Начальное направление - вдоль оси X
         this.x = 0;
         this.y = h0;
+        this.z = 0;
+        
+        // Скорость в 3D
         this.vx = v0 * Math.cos(angle);
         this.vy = v0 * Math.sin(angle);
-        this.m = mass / 1000; // г -> кг
-        this.S = area / 100;  // дм² -> м²
+        this.vz = 0;
+        
+        // Углы ориентации (для отклонения влево/вправо)
+        this.yaw = 0;   // рыскание (поворот вокруг Y)
+        this.pitch = angle; // тангаж
+        this.roll = 0;  // крен
+        
+        this.m = mass / 1000;
+        this.S = area / 100;
         this.CL = CL;
         this.CD = CD;
-        this.trail = [{x: this.x, y: this.y}];
+        this.trail = [{x: this.x, y: this.y, z: this.z}];
         this.t = 0;
         this.yMax = h0;
         this.landed = false;
     }
 
-    // Производные dy/dt = f(t, y)
     derivatives(state) {
-        const [x, y, vx, vy] = state;
-        // Скорость относительно воздуха (с учётом ветра)
+        const [x, y, z, vx, vy, vz] = state;
+        
+        // Скорость относительно воздуха с учётом ветра (ветер дует по X)
         const vxAir = vx - params.wind;
         const vyAir = vy;
-        const Vair = Math.sqrt(vxAir*vxAir + vyAir*vyAir);
+        const vzAir = vz;
+        const Vair = Math.sqrt(vxAir*vxAir + vyAir*vyAir + vzAir*vzAir);
 
-        if (Vair < 0.1) return [0, 0, 0, -G];
+        if (Vair < 0.1) return [0, 0, 0, 0, -G, 0];
 
         const q = 0.5 * RHO * Vair * Vair * this.S;
-        const L = q * this.CL;
-        const D = q * this.CD;
+        const L = q * this.CL;  // подъёмная сила
+        const D = q * this.CD;  // сопротивление
+        
+        // Направление скорости относительно воздуха
+        const gammaXZ = Math.atan2(vzAir, vxAir); // угол в плоскости XZ
+        const gammaXY = Math.atan2(vyAir, Math.sqrt(vxAir*vxAir + vzAir*vzAir)); // угол подъёма
 
-        // Угол вектора скорости ОТНОСИТЕЛЬНО ВОЗДУХА
-        const gamma = Math.atan2(vyAir, vxAir);
+        // Сопротивление - против скорости относительно воздуха
+        const Dx = -D * vxAir / Vair;
+        const Dy = -D * vyAir / Vair;
+        const Dz = -D * vzAir / Vair;
 
-        // Сопротивление против скорости относительно воздуха
-        const Dx = -D * Math.cos(gamma);
-        const Dy = -D * Math.sin(gamma);
+        // Подъёмная сила - перпендикулярна скорости, направлена вверх (в плоскости скорости)
+        // L направлена перпендикулярно Vair в плоскости, содержащей Vair и ось Y
+        const Lx = -L * Math.sin(gammaXY) * vxAir / Math.sqrt(vxAir*vxAir + vzAir*vzAir + 0.001);
+        const Ly = L * Math.cos(gammaXY);
+        const Lz = -L * Math.sin(gammaXY) * vzAir / Math.sqrt(vxAir*vxAir + vzAir*vzAir + 0.001);
 
-        // Подъёмная сила перпендикулярна скорости относительно воздуха
-        const Lx = -L * Math.sin(gamma);
-        const Ly = L * Math.cos(gamma);
-
-        // Турбулентность (случайный импульс)
-        let turbFx = 0, turbFy = 0;
+        // Турбулентность (случайные порывы в 3D)
+        let turbFx = 0, turbFy = 0, turbFz = 0;
         if (params.turb > 0) {
             const turb = params.turb * 0.1;
             turbFx = (Math.random()-0.5) * turb * G * this.m;
-            turbFy = (Math.random()-0.5) * turb * G * this.m;
+            turbFy = (Math.random()-0.5) * turb * G * this.m * 0.5;
+            turbFz = (Math.random()-0.5) * turb * G * this.m;
+        }
+
+        // Небольшое случайное отклонение курса (имитация неидеальной устойчивости)
+        if (params.turb > 0 && Vair > 1) {
+            this.yaw += (Math.random() - 0.5) * params.turb * 0.002;
         }
 
         const ax = (Dx + Lx + turbFx) / this.m;
         const ay = (Dy + Ly + turbFy) / this.m - G;
+        const az = (Dz + Lz + turbFz) / this.m;
 
-        return [vx, vy, ax, ay];
+        return [vx, vy, vz, ax, ay, az];
     }
 
-    // RK4 шаг
     step(dt) {
         if (this.landed) return;
 
-        const state = [this.x, this.y, this.vx, this.vy];
-
+        const state = [this.x, this.y, this.z, this.vx, this.vy, this.vz];
+        
         const k1 = this.derivatives(state);
         const k2 = this.derivatives([
-            state[0] + k1[0]*dt/2, state[1] + k1[1]*dt/2,
-            state[2] + k1[2]*dt/2, state[3] + k1[3]*dt/2
+            state[0] + k1[0]*dt/2, state[1] + k1[1]*dt/2, state[2] + k1[2]*dt/2,
+            state[3] + k1[3]*dt/2, state[4] + k1[4]*dt/2, state[5] + k1[5]*dt/2
         ]);
         const k3 = this.derivatives([
-            state[0] + k2[0]*dt/2, state[1] + k2[1]*dt/2,
-            state[2] + k2[2]*dt/2, state[3] + k2[3]*dt/2
+            state[0] + k2[0]*dt/2, state[1] + k2[1]*dt/2, state[2] + k2[2]*dt/2,
+            state[3] + k2[3]*dt/2, state[4] + k2[4]*dt/2, state[5] + k2[5]*dt/2
         ]);
         const k4 = this.derivatives([
-            state[0] + k3[0]*dt, state[1] + k3[1]*dt,
-            state[2] + k3[2]*dt, state[3] + k3[3]*dt
+            state[0] + k3[0]*dt, state[1] + k3[1]*dt, state[2] + k3[2]*dt,
+            state[3] + k3[3]*dt, state[4] + k3[4]*dt, state[5] + k3[5]*dt
         ]);
 
         this.x += (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]) * dt / 6;
         this.y += (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]) * dt / 6;
-        this.vx += (k1[2] + 2*k2[2] + 2*k3[2] + k4[2]) * dt / 6;
-        this.vy += (k1[3] + 2*k2[3] + 2*k3[3] + k4[3]) * dt / 6;
+        this.z += (k1[2] + 2*k2[2] + 2*k3[2] + k4[2]) * dt / 6;
+        this.vx += (k1[3] + 2*k2[3] + 2*k3[3] + k4[3]) * dt / 6;
+        this.vy += (k1[4] + 2*k2[4] + 2*k3[4] + k4[4]) * dt / 6;
+        this.vz += (k1[5] + 2*k2[5] + 2*k3[5] + k4[5]) * dt / 6;
 
         this.t += dt;
-
         if (this.y > this.yMax) this.yMax = this.y;
 
-        // Земля
         if (this.y <= 0) {
             this.y = 0;
             this.landed = true;
         }
 
-        // Записываем траекторию не каждый шаг (оптимизация)
+        // Записываем траекторию
         const last = this.trail[this.trail.length - 1];
-        const dist = Math.hypot(this.x - last.x, this.y - last.y);
-        if (dist > 0.2) {
-            this.trail.push({x: this.x, y: this.y});
+        const dist = Math.sqrt((this.x - last.x)**2 + (this.y - last.y)**2 + (this.z - last.z)**2);
+        if (dist > 0.3) {
+            this.trail.push({x: this.x, y: this.y, z: this.z});
         }
     }
 
     getSpeed() {
-        return Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+        return Math.sqrt(this.vx*this.vx + this.vy*this.vy + this.vz*this.vz);
     }
-
-    getGamma() {
-        return Math.atan2(this.vy, this.vx);
+    
+    // Угол направления в плоскости XZ (для ориентации модели)
+    getYaw() {
+        return Math.atan2(this.vz, this.vx);
     }
-}
-
-// Рисование
-function draw() {
-    // Фон
-    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grad.addColorStop(0, '#0b1026');
-    grad.addColorStop(0.6, '#1e2a4a');
-    grad.addColorStop(1, '#2d4a3e');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Сетка
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    for (let xm = 0; xm <= 100; xm += 5) {
-        const p = worldToScreen(xm, 0);
-        ctx.beginPath();
-        ctx.moveTo(p.x, 0);
-        ctx.lineTo(p.x, canvas.height);
-        ctx.stroke();
-    }
-    for (let ym = 0; ym <= 50; ym += 5) {
-        const p = worldToScreen(0, ym);
-        ctx.beginPath();
-        ctx.moveTo(0, p.y);
-        ctx.lineTo(canvas.width, p.y);
-        ctx.stroke();
-    }
-
-    // Оси с подписями
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'center';
-    for (let xm = 0; xm <= 100; xm += 10) {
-        const p = worldToScreen(xm, 0);
-        ctx.fillText(xm + 'м', p.x, offsetY + 20);
-    }
-    ctx.textAlign = 'right';
-    for (let ym = 0; ym <= 50; ym += 10) {
-        const p = worldToScreen(0, ym);
-        ctx.fillText(ym + 'м', offsetX - 10, p.y + 4);
-    }
-
-    // Земля
-    const groundY = worldToScreen(0, 0).y;
-    ctx.fillStyle = '#1a2f23';
-    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-    ctx.strokeStyle = '#2d5a3f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, groundY);
-    ctx.lineTo(canvas.width, groundY);
-    ctx.stroke();
-
-    // Индикатор ветра
-    if (params.wind !== 0) {
-        const windX = canvas.width - 80;
-        const windY = 30;
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.font = '11px monospace';
-        ctx.textAlign = 'right';
-        ctx.fillText(`Ветер: ${params.wind > 0 ? '→' : '←'} ${Math.abs(params.wind).toFixed(1)} м/с`, windX, windY);
-        // Стрелка
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const dir = params.wind > 0 ? 1 : -1;
-        ctx.moveTo(windX - 15 * dir, windY - 15);
-        ctx.lineTo(windX - 15 * dir, windY - 5);
-        ctx.lineTo(windX - 5 * dir, windY - 10);
-        ctx.closePath();
-        ctx.fill();
-    }
-
-    // Старые следы
-    trails.forEach(trail => {
-        if (trail.length < 2) return;
-        ctx.strokeStyle = 'rgba(78, 204, 163, 0.25)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const p0 = worldToScreen(trail[0].x, trail[0].y);
-        ctx.moveTo(p0.x, p0.y);
-        for (let i = 1; i < trail.length; i++) {
-            const p = worldToScreen(trail[i].x, trail[i].y);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
-    });
-
-    // Текущий след
-    if (plane && plane.trail.length > 1) {
-        ctx.strokeStyle = '#4ecca3';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        const p0 = worldToScreen(plane.trail[0].x, plane.trail[0].y);
-        ctx.moveTo(p0.x, p0.y);
-        for (let i = 1; i < plane.trail.length; i++) {
-            const p = worldToScreen(plane.trail[i].x, plane.trail[i].y);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
-    }
-
-    // Самолётик
-    if (plane) {
-        const p = worldToScreen(plane.x, plane.y);
-        const gamma = plane.getGamma();
-        const size = 12 + plane.getSpeed() * 0.3;
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(gamma);
-
-        // Тень
-        ctx.shadowColor = 'rgba(233, 69, 96, 0.6)';
-        ctx.shadowBlur = 15;
-
-        // Фюзеляж
-        ctx.fillStyle = '#e94560';
-        ctx.beginPath();
-        ctx.moveTo(size, 0);
-        ctx.lineTo(-size * 0.6, -size * 0.35);
-        ctx.lineTo(-size * 0.4, 0);
-        ctx.lineTo(-size * 0.6, size * 0.35);
-        ctx.closePath();
-        ctx.fill();
-
-        // Крылья
-        ctx.fillStyle = '#ff6b81';
-        ctx.beginPath();
-        ctx.moveTo(-size * 0.2, 0);
-        ctx.lineTo(-size * 0.7, -size * 0.9);
-        ctx.lineTo(-size * 0.4, -size * 0.1);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(-size * 0.2, 0);
-        ctx.lineTo(-size * 0.7, size * 0.9);
-        ctx.lineTo(-size * 0.4, size * 0.1);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.restore();
-
-        // Вектор скорости (жёлтый)
-        const vScale = 3;
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.7)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x + plane.vx * vScale, p.y - plane.vy * vScale);
-        ctx.stroke();
+    
+    // Угол подъёма
+    getPitch() {
+        const hSpeed = Math.sqrt(this.vx*this.vx + this.vz*this.vz);
+        return Math.atan2(this.vy, hSpeed);
     }
 }
 
-// Анимация
+// ==========================================
+// ANIMATION LOOP
+// ==========================================
+
 function loop(timestamp) {
     if (!lastTime) lastTime = timestamp;
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // ограничим 50мс
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
     lastTime = timestamp;
 
     if (isRunning && plane && !plane.landed) {
-        // Физический шаг с фиксированным dt для стабильности (0.005 с)
         const physDt = 0.005;
         const steps = Math.max(1, Math.round(dt / physDt));
         for (let i = 0; i < steps; i++) {
@@ -640,37 +814,71 @@ function loop(timestamp) {
         updateLiveStats();
     }
 
-    draw();
+    updateScene();
+    controls.update();
+    renderer.render(scene, camera);
     requestAnimationFrame(loop);
+}
+
+function updateScene() {
+    if (!plane || !planeMesh) return;
+    
+    // Update plane position в 3D
+    planeMesh.position.set(plane.x, plane.y, plane.z);
+    planeMesh.visible = true;
+    
+    // Orient plane along velocity в 3D
+    if (plane.getSpeed() > 0.1) {
+        const yaw = plane.getYaw();
+        const pitch = plane.getPitch();
+        
+        planeMesh.rotation.y = -yaw;
+        planeMesh.rotation.z = pitch;
+        planeMesh.rotation.x = 0;
+    }
+    
+    // Update trail в 3D
+    if (plane.trail.length > 1) {
+        const points = plane.trail.map(p => new THREE.Vector3(p.x, p.y, p.z));
+        trailLine.geometry.setFromPoints(points);
+    }
+    
+    // Camera follows plane smoothly
+    if (isRunning) {
+        controls.target.lerp(new THREE.Vector3(plane.x * 0.5, plane.y * 0.3 + 5, plane.z * 0.5), 0.02);
+    }
 }
 
 function updateLiveStats() {
     if (!plane) return;
+    
     document.getElementById('s-distance').textContent = plane.x.toFixed(1) + ' м';
+    document.getElementById('s-zoffset').textContent = plane.z.toFixed(1) + ' м';
     document.getElementById('s-time').textContent = plane.t.toFixed(2) + ' с';
-    document.getElementById('s-vfinal').textContent = plane.getSpeed().toFixed(2) + ' м/с';
+    document.getElementById('s-vfinal').textContent = plane.getSpeed().toFixed(1) + ' м/с';
     document.getElementById('s-hmax').textContent = plane.yMax.toFixed(1) + ' м';
+    
+    document.getElementById('hud-speed').textContent = plane.getSpeed().toFixed(1) + ' м/с';
+    document.getElementById('hud-alt').textContent = plane.y.toFixed(1) + ' м';
+    document.getElementById('hud-z').textContent = plane.z.toFixed(1) + ' м';
 }
 
 function updateStats() {
-    if (!plane) return;
-    document.getElementById('s-distance').textContent = plane.x.toFixed(1) + ' м';
-    document.getElementById('s-time').textContent = plane.t.toFixed(2) + ' с';
-    document.getElementById('s-vfinal').textContent = plane.getSpeed().toFixed(2) + ' м/с';
-    document.getElementById('s-hmax').textContent = plane.yMax.toFixed(1) + ' м';
+    updateLiveStats();
 }
 
-// Управление
-function getSlider(id) {
-    return document.getElementById(id);
-}
+// ==========================================
+// CONTROLS
+// ==========================================
 
-function bindSlider(id, param, displayId, transform = v => v) {
-    const slider = getSlider(id);
-    const display = document.getElementById(displayId);
+function bindSlider(id, param, suffix = '') {
+    const slider = document.getElementById(id);
+    const display = document.getElementById('val-' + id);
+    
     slider.addEventListener('input', () => {
         params[param] = parseFloat(slider.value);
-        display.textContent = transform(params[param]);
+        display.textContent = params[param] + suffix;
+        
         if (param === 'CL' || param === 'CD') {
             const K = params.CL / params.CD;
             document.getElementById('val-k').textContent = K.toFixed(2);
@@ -679,17 +887,16 @@ function bindSlider(id, param, displayId, transform = v => v) {
     });
 }
 
-bindSlider('v0', 'v0', 'val-v0');
-bindSlider('angle', 'angle', 'val-angle');
-bindSlider('h0', 'h0', 'val-h0');
-bindSlider('mass', 'mass', 'val-mass');
-bindSlider('area', 'area', 'val-area');
-bindSlider('cl', 'CL', 'val-cl');
-bindSlider('cd', 'CD', 'val-cd');
-bindSlider('wind', 'wind', 'val-wind', v => parseFloat(v).toFixed(1));
-bindSlider('turb', 'turb', 'val-turb', v => parseFloat(v).toFixed(1));
+bindSlider('v0', 'v0', ' м/с');
+bindSlider('angle', 'angle', '°');
+bindSlider('h0', 'h0', ' м');
+bindSlider('mass', 'mass', ' г');
+bindSlider('area', 'area', ' дм²');
+bindSlider('cl', 'CL', '');
+bindSlider('cd', 'CD', '');
+bindSlider('wind', 'wind', ' м/с');
+bindSlider('turb', 'turb', '');
 
-// Выбор формы
 document.getElementById('shape').addEventListener('change', function() {
     const shape = this.value;
     params.shape = shape;
@@ -699,48 +906,95 @@ document.getElementById('shape').addEventListener('change', function() {
         params.area = s.area;
         params.CL = s.CL;
         params.CD = s.CD;
-        // Обновляем слайдеры
+        
         document.getElementById('mass').value = s.mass;
         document.getElementById('area').value = s.area;
         document.getElementById('cl').value = s.CL;
         document.getElementById('cd').value = s.CD;
-        document.getElementById('val-mass').textContent = s.mass;
-        document.getElementById('val-area').textContent = s.area;
+        
+        document.getElementById('val-mass').textContent = s.mass + ' г';
+        document.getElementById('val-area').textContent = s.area + ' дм²';
         document.getElementById('val-cl').textContent = s.CL.toFixed(2);
         document.getElementById('val-cd').textContent = s.CD.toFixed(2);
+        
         const K = s.CL / s.CD;
         document.getElementById('val-k').textContent = K.toFixed(2);
     }
 });
 
 function launch() {
-    if (plane) {
-        trails.push([...plane.trail]);
+    // Store old trail
+    if (plane && plane.trail.length > 1) {
+        const oldGeo = new THREE.BufferGeometry();
+        const oldPoints = plane.trail.map(p => new THREE.Vector3(p.x, p.y, p.z));
+        oldGeo.setFromPoints(oldPoints);
+        const oldMat = new THREE.LineBasicMaterial({ 
+            color: 0x4ecca3, 
+            transparent: true, 
+            opacity: 0.2 
+        });
+        const oldLine = new THREE.Line(oldGeo, oldMat);
+        scene.add(oldLine);
+        window.oldTrailLines.push(oldLine);
+        
+        // Limit old trails
+        if (window.oldTrailLines.length > 5) {
+            const removed = window.oldTrailLines.shift();
+            scene.remove(removed);
+            removed.geometry.dispose();
+            removed.material.dispose();
+        }
     }
-    plane = new PaperPlane(params.v0, params.angle, params.h0, params.mass, params.area, params.CL, params.CD);
+    
+    plane = new PaperPlane(
+        params.v0, params.angle, params.h0,
+        params.mass, params.area, params.CL, params.CD
+    );
     isRunning = true;
     lastTime = 0;
-    simTime = 0;
+    
+    // Reset trail line
+    trailLine.geometry.setFromPoints([new THREE.Vector3(0, params.h0, 0)]);
 }
 
 function clearAll() {
     plane = null;
-    trails = [];
     isRunning = false;
+    
+    // Clear trails
+    trailLine.geometry.setFromPoints([]);
+    window.oldTrailLines.forEach(line => {
+        scene.remove(line);
+        line.geometry.dispose();
+        line.material.dispose();
+    });
+    window.oldTrailLines = [];
+    
+    // Reset plane position
+    if (planeMesh) {
+        planeMesh.position.set(0, params.h0, 0);
+        planeMesh.rotation.set(0, 0, params.angle * Math.PI / 180);
+    }
+    
+    // Reset stats
     document.getElementById('s-distance').textContent = '—';
+    document.getElementById('s-zoffset').textContent = '—';
     document.getElementById('s-time').textContent = '—';
     document.getElementById('s-vfinal').textContent = '—';
     document.getElementById('s-hmax').textContent = '—';
-    draw();
+    document.getElementById('hud-speed').textContent = '— м/с';
+    document.getElementById('hud-alt').textContent = '— м';
+    document.getElementById('hud-z').textContent = '— м';
 }
 
 document.getElementById('launch').addEventListener('click', launch);
 document.getElementById('clear').addEventListener('click', clearAll);
 
-// Оптимизация: перебор углов и скорости для максимальной дальности
+// Optimization
 document.getElementById('optimize').addEventListener('click', function() {
     const status = document.getElementById('opt-status');
-    status.textContent = 'Оптимизация... (0%)';
+    status.className = 'show';
+    status.textContent = '⚡ Оптимизация... 0%';
     this.disabled = true;
 
     const baseParams = {...params};
@@ -758,10 +1012,8 @@ document.getElementById('optimize').addEventListener('click', function() {
             done++;
 
             const p = new PaperPlane(v0, angle, baseParams.h0, baseParams.mass, baseParams.area, baseParams.CL, baseParams.CD);
-            // Симулируем быстро без рисования
-            const physDt = 0.005;
             while (!p.landed && p.t < 30) {
-                p.step(physDt);
+                p.step(0.005);
             }
             if (p.x > bestDist) {
                 bestDist = p.x;
@@ -769,17 +1021,22 @@ document.getElementById('optimize').addEventListener('click', function() {
                 bestAngle = angle;
             }
         }
-        status.textContent = `Оптимизация... (${Math.round(done/total*100)}%)`;
+        
+        status.textContent = `⚡ Оптимизация... ${Math.round(done/total*100)}%`;
+        
         if (done < total) {
             setTimeout(runBatch, 0);
         } else {
-            status.innerHTML = `Лучший результат: <span style="color:#4ecca3">${bestDist.toFixed(1)} м</span><br>Скорость: ${bestV0.toFixed(1)} м/с, Угол: ${bestAngle}°`;
+            status.innerHTML = `✓ Лучший результат: <strong style="color:#4ecca3">${bestDist.toFixed(1)} м</strong><br>` +
+                `Скорость: ${bestV0.toFixed(1)} м/с · Угол: ${bestAngle}°`;
+            
             document.getElementById('v0').value = bestV0;
             document.getElementById('angle').value = bestAngle;
-            document.getElementById('val-v0').textContent = bestV0.toFixed(1);
-            document.getElementById('val-angle').textContent = bestAngle;
+            document.getElementById('val-v0').textContent = bestV0 + ' м/с';
+            document.getElementById('val-angle').textContent = bestAngle + '°';
             params.v0 = bestV0;
             params.angle = bestAngle;
+            
             launch();
             document.getElementById('optimize').disabled = false;
         }
@@ -787,142 +1044,19 @@ document.getElementById('optimize').addEventListener('click', function() {
     runBatch();
 });
 
-// ========== THREE.JS 3D VIEW ==========
-let is3D = false;
-let scene, camera, renderer, controls;
-let planeMesh, trailLine3D;
-let threeInitialized = false;
+//{}
 
-function initThree() {
-    if (threeInitialized) return;
-    const container = document.getElementById('three-container');
-    // Scene
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1026);
-    // Camera
-    camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(20, 15, 20);
-    // Renderer
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+// Resize handler
+window.addEventListener('resize', () => {
+    const container = document.getElementById('scene-container');
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-    // Controls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 5);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
-    // Ground
-    const groundGeometry = new THREE.PlaneGeometry(200, 200);
-    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2f23 });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    scene.add(ground);
-    // Grid helper
-    const gridHelper = new THREE.GridHelper(200, 20, 0x2d5a3f, 0x1e2a4a);
-    scene.add(gridHelper);
-    // Paper plane model (simple shape)
-    const planeGroup = new THREE.Group();
-    // Fuselage
-    const fuselageGeometry = new THREE.ConeGeometry(0.5, 3, 4);
-    const fuselageMaterial = new THREE.MeshPhongMaterial({ color: 0xe94560 });
-    const fuselage = new THREE.Mesh(fuselageGeometry, fuselageMaterial);
-    fuselage.rotation.z = Math.PI / 2;
-    planeGroup.add(fuselage);
-    // Wings
-    const wingGeometry = new THREE.BoxGeometry(2, 0.1, 0.8);
-    const wingMaterial = new THREE.MeshPhongMaterial({ color: 0xff6b81 });
-    const wing = new THREE.Mesh(wingGeometry, wingMaterial);
-    wing.position.y = 0.1;
-    planeGroup.add(wing);
-    // Tail
-    const tailGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.4);
-    const tail = new THREE.Mesh(tailGeometry, wingMaterial);
-    tail.position.set(-1.2, 0, 0);
-    planeGroup.add(tail);
-    scene.add(planeGroup);
-    planeMesh = planeGroup;
-    // Trail line
-    const trailGeometry = new THREE.BufferGeometry();
-    const trailMaterial = new THREE.LineBasicMaterial({ color: 0x4ecca3 });
-    trailLine3D = new THREE.Line(trailGeometry, trailMaterial);
-    scene.add(trailLine3D);
-    threeInitialized = true;
-}
+});
 
-function updateThree() {
-    if (!is3D || !plane) return;
-    // Update plane position (x is forward, y is up, z is 0)
-    planeMesh.position.set(plane.x, plane.y, 0);
-    // Point plane along velocity vector
-    planeMesh.lookAt(new THREE.Vector3(plane.x + plane.vx, plane.y + plane.vy, 0));
-    // Update trail
-    if (plane.trail.length > 1) {
-        const points = [];
-        plane.trail.forEach(p => points.push(new THREE.Vector3(p.x, p.y, 0)));
-        trailLine3D.geometry.setFromPoints(points);
-    }
-    controls.update();
-    renderer.render(scene, camera);
-}
-
-function toggleView() {
-    const btn = document.getElementById('toggle-view');
-    const canvas2D = document.getElementById('simCanvas');
-    const container3D = document.getElementById('three-container');
-    if (!is3D) {
-        // Switch to 3D
-        if (!threeInitialized) initThree();
-        canvas2D.style.display = 'none';
-        container3D.style.display = 'block';
-        is3D = true;
-        btn.textContent = 'Переключить на 2D';
-        updateThree();
-    } else {
-        // Switch to 2D
-        canvas2D.style.display = 'block';
-        container3D.style.display = 'none';
-        is3D = false;
-        btn.textContent = 'Переключить на 3D';
-    }
-}
-
-document.getElementById('toggle-view').addEventListener('click', toggleView);
-
-// Modify resize to handle 3D
-(function() {
-    const origResize = resize;
-    resize = function() {
-        origResize();
-        if (is3D && threeInitialized) {
-            const container = document.getElementById('three-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-    };
-})();
-
-// Modify loop to update 3D
-(function() {
-    const origLoop = loop;
-    loop = function(timestamp) {
-        origLoop(timestamp);
-        if (is3D) updateThree();
-    };
-})();
-
-// Запуск
-resize();
-launch(); // автозапуск
-draw();
+// Init
+initScene();
+launch();
 requestAnimationFrame(loop);
 
 </script>
