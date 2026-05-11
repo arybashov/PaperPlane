@@ -421,7 +421,7 @@
 
     <div class="control-group">
         <label>Турбулентность <span class="value" id="val-turb">0.5</span></label>
-        <input type="range" id="turb" min="0" max="2" step="0.1" value="0.5">
+        <input type="range" id="turb" min="0" max="5" step="0.1" value="0.5">
     </div>
 
     <div class="btn-row">
@@ -847,10 +847,18 @@ class PaperPlane {
         const turb = { tx: 0, ty: 0, tz: 0 };
         if (params.turb > 0) {
             const heightScale = 0.3 + 2.0 * Math.exp(-this.y / 4.0);
-            const s = heightScale * params.turb * 0.1 * G * this.m;
-            turb.tx = (Math.random() - 0.5) * s;
-            turb.ty = (Math.random() - 0.5) * s * 0.5;
-            turb.tz = (Math.random() - 0.5) * s;
+            const amp = params.turb * 0.4 * G * this.m; // ×4 к прежнему
+            const s = heightScale * amp;
+            
+            // Коррелированный шум: прошлое значение частично сохраняется
+            this.turbMem = this.turbMem || { x: 0, y: 0, z: 0 };
+            this.turbMem.x = this.turbMem.x * 0.85 + (Math.random() - 0.5) * 0.15;
+            this.turbMem.y = this.turbMem.y * 0.85 + (Math.random() - 0.5) * 0.15;
+            this.turbMem.z = this.turbMem.z * 0.85 + (Math.random() - 0.5) * 0.15;
+            
+            turb.tx = this.turbMem.x * s;
+            turb.ty = this.turbMem.y * s * 0.5;
+            turb.tz = this.turbMem.z * s;
 
             // Термики
             const Vair = Math.sqrt(this.vx*this.vx + this.vy*this.vy + this.vz*this.vz);
@@ -868,7 +876,7 @@ class PaperPlane {
 
             // Отклонение курса
             if (Vair > 1) {
-                this.yaw += (Math.random() - 0.5) * params.turb * 0.002;
+                this.yaw += (Math.random() - 0.5) * params.turb * 0.008;
             }
         }
 
