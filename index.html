@@ -500,6 +500,15 @@ const SHAPES = {
     delta:  { mass:5, area:1.2, CL:0.55, CD:0.15 }
 };
 
+// Локальные восходящие потоки (термики)
+const THERMALS = [
+    { x: 20, z: 0, radius: 5, strength: 0.4, height: 8 },
+    { x: 45, z: 3, radius: 4, strength: 0.6, height: 10 },
+    { x: 8,  z: -2, radius: 3, strength: 0.3, height: 6 }
+];
+
+const THERMAL_COLOR = 0xff6633;
+
 // ==========================================
 // THREE.JS SCENE
 // ==========================================
@@ -507,6 +516,11 @@ const SHAPES = {
 let scene, camera, renderer, controls;
 let planeMesh, trailLine, gridHelper;
 let sceneInitialized = false;
+let thermalMeshes = [];
+let thermalParticles = null;
+let particlePositions = null;
+let particleSpeeds = null;
+let windArrow = null;
 
 function initScene() {
     if (sceneInitialized) return;
@@ -605,6 +619,87 @@ function initScene() {
     
     // Old trails
     window.oldTrailLines = [];
+    
+    // ========== THERMAL UPDRAFT VISUALIZATION ==========
+    
+    // Columns and rings for each thermal
+    THERMALS.forEach(t => {
+        // Semi-transparent column
+        const cylGeo = new THREE.CylinderGeometry(t.radius * 0.3, t.radius * 0.3, t.height, 16);
+        const cylMat = new THREE.MeshBasicMaterial({
+            color: THERMAL_COLOR,
+            transparent: true,
+            opacity: 0.06,
+            side: THREE.DoubleSide
+        });
+        const cyl = new THREE.Mesh(cylGeo, cylMat);
+        cyl.position.set(t.x, t.height / 2, t.z);
+        scene.add(cyl);
+        
+        // Ring at base
+        const ringGeo = new THREE.RingGeometry(t.radius * 0.2, t.radius, 24);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: THERMAL_COLOR,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(t.x, 0.05, t.z);
+        scene.add(ring);
+        
+        thermalMeshes.push({ cyl, ring });
+    });
+    
+    // Particle system for all thermals
+    const particleCount = THERMALS.length * 200;
+    const particleGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const speeds = new Float32Array(particleCount);
+    particleSpeeds = speeds;
+    
+    for (let i = 0; i < particleCount; i++) {
+        const t = THERMALS[i % THERMALS.length];
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.random() * t.radius * 0.8;
+        positions[i*3] = t.x + Math.cos(angle) * r;
+        positions[i*3+1] = Math.random() * t.height;
+        positions[i*3+2] = t.z + Math.sin(angle) * r;
+        speeds[i] = 0.3 + Math.random() * 0.4;
+    }
+    
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particleMat = new THREE.PointsMaterial({
+        color: THERMAL_COLOR,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    thermalParticles = new THREE.Points(particleGeo, particleMat);
+    scene.add(thermalParticles);
+    particlePositions = positions;
+    
+    // Wind arrow on ground
+    windArrow = new THREE.Group();
+    const arrowLen = 4;
+    const shaftGeo = new THREE.BoxGeometry(arrowLen, 0.05, 0.05);
+    const shaftMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3 });
+    const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+    shaft.position.x = arrowLen / 2;
+    windArrow.add(shaft);
+    
+    const headGeo = new THREE.ConeGeometry(0.2, 0.5, 6);
+    const headMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.4 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.x = arrowLen;
+    head.rotation.z = -Math.PI / 2;
+    windArrow.add(head);
+    
+    windArrow.position.set(-5, 0.1, -6);
+    scene.add(windArrow);
     
     sceneInitialized = true;
 }
@@ -869,6 +964,44 @@ function updateScene() {
     // Camera follows plane smoothly
     if (isRunning) {
         controls.target.lerp(new THREE.Vector3(plane.x * 0.5, plane.y * 0.3 + 5, plane.z * 0.5), 0.02);
+    }
+    
+    // Animate thermal particles
+    if (thermalParticles && particlePositions && particleSpeeds) {
+        for (let i = 0; i < particlePositions.length / 3; i++) {
+            const t = THERMALS[i % THERMALS.length];
+            particlePositions[i*3+1] += particleSpeeds[i] * 0.02;
+            if (particlePositions[i*3+1] > t.height) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.random() * t.radius * 0.8;
+                particlePositions[i*3] = t.x + Math.cos(angle) * r;
+                particlePositions[i*3+1] = 0.1;
+                particlePositions[i*3+2] = t.z + Math.sin(angle) * r;
+            }
+            // Wind drift for particles
+            if (params.wind !== 0) {
+                particlePositions[i*3] += params.wind * 0.002;
+            }
+        }
+        thermalParticles.geometry.attributes.position.needsUpdate = true;
+        
+        // Show/hide based on turbulence level
+        thermalParticles.visible = params.turb > 0.1;
+        thermalMeshes.forEach(m => {
+            m.cyl.visible = params.turb > 0.1;
+            m.ring.visible = params.turb > 0.1;
+        });
+    }
+    
+    // Wind arrow
+    if (windArrow) {
+        if (params.wind !== 0) {
+            windArrow.visible = true;
+            windArrow.rotation.y = params.wind > 0 ? 0 : Math.PI;
+            windArrow.position.set(-5, 0.1, -6);
+        } else {
+            windArrow.visible = false;
+        }
     }
 }
 
