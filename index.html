@@ -809,10 +809,8 @@ class PaperPlane {
         this.landed = false;
     }
 
-    derivatives(state) {
+    derivatives(state, turb) {
         const [x, y, z, vx, vy, vz] = state;
-        
-        // Скорость относительно воздуха с учётом ветра (ветер дует по X)
         const vxAir = vx - params.wind;
         const vyAir = vy;
         const vzAir = vz;
@@ -821,76 +819,23 @@ class PaperPlane {
         if (Vair < 0.1) return [0, 0, 0, 0, -G, 0];
 
         const q = 0.5 * RHO * Vair * Vair * this.S;
-        const L = q * this.CL;  // подъёмная сила
-        const D = q * this.CD;  // сопротивление
-        
-        // Направление скорости относительно воздуха
-        const gammaXZ = Math.atan2(vzAir, vxAir); // угол в плоскости XZ
-        const gammaXY = Math.atan2(vyAir, Math.sqrt(vxAir*vxAir + vzAir*vzAir)); // угол подъёма
+        const L = q * this.CL;
+        const D = q * this.CD;
 
-        // Сопротивление - против скорости относительно воздуха
+        const gammaXY = Math.atan2(vyAir, Math.sqrt(vxAir*vxAir + vzAir*vzAir));
+
         const Dx = -D * vxAir / Vair;
         const Dy = -D * vyAir / Vair;
         const Dz = -D * vzAir / Vair;
 
-        // Подъёмная сила - перпендикулярна скорости, направлена вверх (в плоскости скорости)
-        // L направлена перпендикулярно Vair в плоскости, содержащей Vair и ось Y
         const Lx = -L * Math.sin(gammaXY) * vxAir / Math.sqrt(vxAir*vxAir + vzAir*vzAir + 0.001);
         const Ly = L * Math.cos(gammaXY);
         const Lz = -L * Math.sin(gammaXY) * vzAir / Math.sqrt(vxAir*vxAir + vzAir*vzAir + 0.001);
 
-        // Высотная зависимость турбулентности
-        const heightScale = 0.3 + 2.0 * Math.exp(-y / 4.0);
-        
-        // Турбулентность (случайные порывы в 3D)
-        let turbFx = 0, turbFy = 0, turbFz = 0;
-        if (params.turb > 0) {
-            const turb = params.turb * 0.1;
-            const s = heightScale * turb * G * this.m;
-            turbFx = (Math.random()-0.5) * s;
-            turbFy = (Math.random()-0.5) * s * 0.5;
-            turbFz = (Math.random()-0.5) * s;
-        }
-
-        // Локальные восходящие потоки (термики)
-        if (Vair > 0.5) {
-            for (const t of THERMALS) {
-                const dx = x - t.x;
-                const dz = z - t.z;
-                const dist = Math.sqrt(dx*dx + dz*dz);
-                if (dist < t.radius && y < t.height) {
-                    const factor = (1 - dist/t.radius) * t.strength * (1 - y/t.height);
-                    turbFy += factor * G * this.m;
-                }
-            }
-        }
-
-        // Небольшое случайное отклонение курса (имитация неидеальной устойчивости)
-        if (params.turb > 0 && Vair > 1) {
-            this.yaw += (Math.random() - 0.5) * params.turb * 0.002;
-        }
-
-        // Локальные восходящие потоки (термики)
-        if (Vair > 0.5) {
-            for (const t of THERMALS) {
-                const dx = x - t.x;
-                const dz = z - t.z;
-                const dist = Math.sqrt(dx*dx + dz*dz);
-                if (dist < t.radius && y < t.height) {
-                    const factor = (1 - dist/t.radius) * t.strength * (1 - y/t.height);
-                    turbFy += factor * G * this.m;
-                }
-            }
-        }
-
-        // Небольшое случайное отклонение курса (имитация неидеальной устойчивости)
-        if (params.turb > 0 && Vair > 1) {
-            this.yaw += (Math.random() - 0.5) * params.turb * 0.002;
-        }
-
-        const ax = (Dx + Lx + turbFx) / this.m;
-        const ay = (Dy + Ly + turbFy) / this.m - G;
-        const az = (Dz + Lz + turbFz) / this.m;
+        // Используем заранее вычисленный импульс турбулентности
+        const ax = (Dx + Lx + turb.tx) / this.m;
+        const ay = (Dy + Ly + turb.ty) / this.m - G;
+        const az = (Dz + Lz + turb.tz) / this.m;
 
         return [vx, vy, vz, ax, ay, az];
     }
@@ -898,21 +843,50 @@ class PaperPlane {
     step(dt) {
         if (this.landed) return;
 
+        // Вычисляем турбулентность ОДИН РАЗ на шаг
+        const turb = { tx: 0, ty: 0, tz: 0 };
+        if (params.turb > 0) {
+            const heightScale = 0.3 + 2.0 * Math.exp(-this.y / 4.0);
+            const s = heightScale * params.turb * 0.1 * G * this.m;
+            turb.tx = (Math.random() - 0.5) * s;
+            turb.ty = (Math.random() - 0.5) * s * 0.5;
+            turb.tz = (Math.random() - 0.5) * s;
+
+            // Термики
+            const Vair = Math.sqrt(this.vx*this.vx + this.vy*this.vy + this.vz*this.vz);
+            if (Vair > 0.5) {
+                for (const t of THERMALS) {
+                    const dx = this.x - t.x;
+                    const dz = this.z - t.z;
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist < t.radius && this.y < t.height) {
+                        const factor = (1 - dist/t.radius) * t.strength * (1 - this.y/t.height);
+                        turb.ty += factor * G * this.m;
+                    }
+                }
+            }
+
+            // Отклонение курса
+            if (Vair > 1) {
+                this.yaw += (Math.random() - 0.5) * params.turb * 0.002;
+            }
+        }
+
         const state = [this.x, this.y, this.z, this.vx, this.vy, this.vz];
-        
-        const k1 = this.derivatives(state);
+
+        const k1 = this.derivatives(state, turb);
         const k2 = this.derivatives([
             state[0] + k1[0]*dt/2, state[1] + k1[1]*dt/2, state[2] + k1[2]*dt/2,
             state[3] + k1[3]*dt/2, state[4] + k1[4]*dt/2, state[5] + k1[5]*dt/2
-        ]);
+        ], turb);
         const k3 = this.derivatives([
             state[0] + k2[0]*dt/2, state[1] + k2[1]*dt/2, state[2] + k2[2]*dt/2,
             state[3] + k2[3]*dt/2, state[4] + k2[4]*dt/2, state[5] + k2[5]*dt/2
-        ]);
+        ], turb);
         const k4 = this.derivatives([
             state[0] + k3[0]*dt, state[1] + k3[1]*dt, state[2] + k3[2]*dt,
             state[3] + k3[3]*dt, state[4] + k3[4]*dt, state[5] + k3[5]*dt
-        ]);
+        ], turb);
 
         this.x += (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]) * dt / 6;
         this.y += (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]) * dt / 6;
