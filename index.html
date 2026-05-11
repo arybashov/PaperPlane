@@ -520,9 +520,12 @@ let vectorField = null;
 let windArrow = null;
 
 // Параметры сетки векторов воздушного потока
-const VF_SIZE = 10;
-const VF_STEP = 0.5;
-const VF_POINTS = Math.floor(VF_SIZE / VF_STEP) + 1; // 21
+const VF_W = 30;  // ширина по X и Z
+const VF_H = 15;  // высота по Y
+const VF_STEP = 1; // шаг
+const VF_NX = Math.floor(VF_W / VF_STEP) + 1; // 31
+const VF_NY = Math.floor(VF_H / VF_STEP) + 1; // 16
+const VF_NZ = Math.floor(VF_W / VF_STEP) + 1; // 31
 
 // Детерминированный хеш для стабильного шума турбулентности
 function hash3(x, y, z) {
@@ -631,17 +634,17 @@ function initScene() {
     
     // ========== VECTOR FIELD (grid of airflow vectors) ==========
     
-    const totalVerts = VF_POINTS ** 3; // 1331
+    const totalVerts = VF_NX * VF_NY * VF_NZ; // 15376
     const vfPos = new Float32Array(totalVerts * 6); // start + end for each
     const vfCol = new Float32Array(totalVerts * 6); // color per vertex
     
-    for (let ix = 0; ix < VF_POINTS; ix++) {
-        for (let iy = 0; iy < VF_POINTS; iy++) {
-            for (let iz = 0; iz < VF_POINTS; iz++) {
+    for (let ix = 0; ix < VF_NX; ix++) {
+        for (let iy = 0; iy < VF_NY; iy++) {
+            for (let iz = 0; iz < VF_NZ; iz++) {
                 const gx = ix * VF_STEP;
                 const gy = iy * VF_STEP;
                 const gz = iz * VF_STEP;
-                const idx = ix * VF_POINTS * VF_POINTS + iy * VF_POINTS + iz;
+                const idx = (ix * VF_NY * VF_NZ) + (iy * VF_NZ) + iz;
                 
                 // Вычисляем поток воздуха в этой точке
                 let fx = params.wind, fy = 0, fz = 0;
@@ -708,7 +711,7 @@ function initScene() {
     });
     
     vectorField = new THREE.LineSegments(vfGeo, vfMat);
-    vectorField.position.set(0, 0, -5); // смещаем сетку левее старта
+    vectorField.position.set(-VF_W/2, 0, -VF_W/2); // центрируем сетку
     scene.add(vectorField);
     
     // Wind arrow on ground
@@ -1050,13 +1053,13 @@ function recomputeVectorField(time) {
     const pos = vectorField.geometry.attributes.position.array;
     const col = vectorField.geometry.attributes.color.array;
     
-    for (let ix = 0; ix < VF_POINTS; ix++) {
-        for (let iy = 0; iy < VF_POINTS; iy++) {
-            for (let iz = 0; iz < VF_POINTS; iz++) {
+    for (let ix = 0; ix < VF_NX; ix++) {
+        for (let iy = 0; iy < VF_NY; iy++) {
+            for (let iz = 0; iz < VF_NZ; iz++) {
                 const gx = ix * VF_STEP;
                 const gy = iy * VF_STEP;
                 const gz = iz * VF_STEP;
-                const idx = ix * VF_POINTS * VF_POINTS + iy * VF_POINTS + iz;
+                const idx = (ix * VF_NY * VF_NZ) + (iy * VF_NZ) + iz;
                 
                 let fx = params.wind, fy = 0, fz = 0;
                 
