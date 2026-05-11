@@ -521,8 +521,8 @@ let windArrow = null;
 
 // Параметры сетки векторов воздушного потока
 const VF_SIZE = 10;
-const VF_STEP = 1.0;
-const VF_POINTS = Math.floor(VF_SIZE / VF_STEP) + 1; // 11
+const VF_STEP = 0.5;
+const VF_POINTS = Math.floor(VF_SIZE / VF_STEP) + 1; // 21
 
 // Детерминированный хеш для стабильного шума турбулентности
 function hash3(x, y, z) {
@@ -963,6 +963,11 @@ function loop(timestamp) {
 }
 
 function updateScene() {
+    // Animate vector field with time
+    if (vectorField) {
+        recomputeVectorField(Date.now() * 0.001);
+    }
+    
     if (!plane || !planeMesh) return;
     
     // Update plane position в 3D
@@ -1021,8 +1026,9 @@ function updateStats() {
 
 // ========== VECTOR FIELD UPDATE ==========
 
-function recomputeVectorField() {
+function recomputeVectorField(time) {
     if (!vectorField) return;
+    time = time || 0;
     
     const pos = vectorField.geometry.attributes.position.array;
     const col = vectorField.geometry.attributes.color.array;
@@ -1048,14 +1054,23 @@ function recomputeVectorField() {
                 }
                 
                 if (params.turb > 0) {
-                    const h = hash3(ix, iy, iz);
-                    const h2 = hash3(ix+100, iy+200, iz+300);
-                    const h3 = hash3(ix+50, iy+150, iz+250);
+                    const seed1 = hash3(ix, iy, iz);
+                    const seed2 = hash3(ix+100, iy+200, iz+300);
+                    const seed3 = hash3(ix+50, iy+150, iz+250);
                     const turbScale = params.turb * 0.4;
                     const heightFade = 0.3 + 0.7 * Math.exp(-gy / 4);
-                    fx += (h - 0.5) * turbScale * heightFade;
-                    fy += (h2 - 0.5) * turbScale * heightFade;
-                    fz += (h3 - 0.5) * turbScale * heightFade;
+                    
+                    // Живая турбулентность: синусоидальная модуляция с разной частотой для каждой точки
+                    const freq1 = 0.5 + seed1 * 1.5;
+                    const freq2 = 0.5 + seed2 * 1.5;
+                    const freq3 = 0.5 + seed3 * 1.5;
+                    const osc1 = Math.sin(time * freq1 + seed1 * Math.PI * 2);
+                    const osc2 = Math.sin(time * freq2 + seed2 * Math.PI * 2);
+                    const osc3 = Math.sin(time * freq3 + seed3 * Math.PI * 2);
+                    
+                    fx += osc1 * turbScale * heightFade;
+                    fy += osc2 * turbScale * heightFade * 0.6;
+                    fz += osc3 * turbScale * heightFade;
                 }
                 
                 const len = Math.sqrt(fx*fx + fy*fy + fz*fz);
