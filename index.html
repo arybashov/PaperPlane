@@ -837,17 +837,47 @@ class PaperPlane {
         const Lz = -L * Math.sin(gammaXY) * vzAir / Math.sqrt(vxAir*vxAir + vzAir*vzAir + 0.001);
 
         // Высотная зависимость турбулентности
-        // У земли (0-3м) — сильнее, на высоте (>10м) — затухает
         const heightScale = 0.3 + 2.0 * Math.exp(-y / 4.0);
+        
+        // Пространственная маска: турбулентность только внутри 10×10×10 м
+        function smoothEdge(val, center, half, fade) {
+            const d = Math.abs(val - center);
+            if (d < half - fade) return 1.0;
+            if (d > half) return 0.0;
+            return 1.0 - (d - (half - fade)) / fade;
+        }
+        const fade = 1.5;
+        const maskX = smoothEdge(x, 5, 5, fade);
+        const maskY = smoothEdge(y, 5, 5, fade);
+        const maskZ = smoothEdge(z, 0, 5, fade);
+        const spatialMask = maskX * maskY * maskZ;
         
         // Турбулентность (случайные порывы в 3D)
         let turbFx = 0, turbFy = 0, turbFz = 0;
-        if (params.turb > 0) {
+        if (params.turb > 0 && spatialMask > 0.01) {
             const turb = params.turb * 0.1;
-            const s = heightScale * turb * G * this.m;
+            const s = heightScale * turb * G * this.m * spatialMask;
             turbFx = (Math.random()-0.5) * s;
             turbFy = (Math.random()-0.5) * s * 0.5;
             turbFz = (Math.random()-0.5) * s;
+        }
+
+        // Локальные восходящие потоки (термики) — тоже затухают на краях
+        if (Vair > 0.5) {
+            for (const t of THERMALS) {
+                const dx = x - t.x;
+                const dz = z - t.z;
+                const dist = Math.sqrt(dx*dx + dz*dz);
+                if (dist < t.radius && y < t.height) {
+                    const factor = (1 - dist/t.radius) * t.strength * (1 - y/t.height);
+                    turbFy += factor * G * this.m * spatialMask;
+                }
+            }
+        }
+
+        // Небольшое случайное отклонение курса — тоже маскируем
+        if (params.turb > 0 && Vair > 1 && spatialMask > 0.01) {
+            this.yaw += (Math.random() - 0.5) * params.turb * 0.002 * spatialMask;
         }
 
         // Локальные восходящие потоки (термики)
