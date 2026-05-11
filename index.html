@@ -371,8 +371,8 @@
     </div>
 
     <div class="control-group">
-        <label>Высота броска <span class="value" id="val-h0">10 м</span></label>
-        <input type="range" id="h0" min="1" max="50" step="1" value="10">
+        <label>Высота броска, м <span class="value" id="val-h0">2</span></label>
+        <input type="range" id="h0" min="1" max="50" step="1" value="2">
     </div>
 
     <div class="section-title">Аэродинамика</div>
@@ -484,7 +484,7 @@ let lastTime = 0;
 let params = {
     v0: 12,
     angle: 15,
-    h0: 10,
+    h0: 2,
     mass: 5,
     area: 1.0,
     CL: 0.50,
@@ -712,13 +712,36 @@ class PaperPlane {
         const Ly = L * Math.cos(gammaXY);
         const Lz = -L * Math.sin(gammaXY) * vzAir / Math.sqrt(vxAir*vxAir + vzAir*vzAir + 0.001);
 
+        // Высотная зависимость турбулентности
+        // У земли (0-3м) — сильнее, на высоте (>10м) — затухает
+        const heightScale = 0.3 + 2.0 * Math.exp(-y / 4.0);
+        
         // Турбулентность (случайные порывы в 3D)
         let turbFx = 0, turbFy = 0, turbFz = 0;
         if (params.turb > 0) {
             const turb = params.turb * 0.1;
-            turbFx = (Math.random()-0.5) * turb * G * this.m;
-            turbFy = (Math.random()-0.5) * turb * G * this.m * 0.5;
-            turbFz = (Math.random()-0.5) * turb * G * this.m;
+            const s = heightScale * turb * G * this.m;
+            turbFx = (Math.random()-0.5) * s;
+            turbFy = (Math.random()-0.5) * s * 0.5;
+            turbFz = (Math.random()-0.5) * s;
+        }
+
+        // Локальные восходящие потоки (термики)
+        if (Vair > 0.5) {
+            const thermals = [
+                { x: 20, z: 0, radius: 5, strength: 0.4 },
+                { x: 45, z: 3, radius: 4, strength: 0.6 },
+                { x: 8,  z: -2, radius: 3, strength: 0.3 }
+            ];
+            for (const t of thermals) {
+                const dx = x - t.x;
+                const dz = z - t.z;
+                const dist = Math.sqrt(dx*dx + dz*dz);
+                if (dist < t.radius) {
+                    const factor = (1 - dist/t.radius) * t.strength;
+                    turbFy += factor * G * this.m;
+                }
+            }
         }
 
         // Небольшое случайное отклонение курса (имитация неидеальной устойчивости)
