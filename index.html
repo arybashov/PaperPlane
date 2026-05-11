@@ -516,11 +516,20 @@ const THERMAL_COLOR = 0xff6633;
 let scene, camera, renderer, controls;
 let planeMesh, trailLine, gridHelper;
 let sceneInitialized = false;
-let thermalMeshes = [];
-let thermalParticles = null;
-let particlePositions = null;
-let particleSpeeds = null;
+let vectorField = null;
 let windArrow = null;
+
+// Параметры сетки векторов воздушного потока
+const VF_SIZE = 10;
+const VF_STEP = 1.0;
+const VF_POINTS = Math.floor(VF_SIZE / VF_STEP) + 1; // 11
+
+// Детерминированный хеш для стабильного шума турбулентности
+function hash3(x, y, z) {
+    let h = x * 374761393 + y * 668265263 + z * 1274126177;
+    h = ((h ^ (h >> 13)) * 1274126177);
+    return ((h ^ (h >> 16)) & 0x7fffffff) / 0x7fffffff;
+}
 
 function initScene() {
     if (sceneInitialized) return;
@@ -620,67 +629,87 @@ function initScene() {
     // Old trails
     window.oldTrailLines = [];
     
-    // ========== THERMAL UPDRAFT VISUALIZATION ==========
+    // ========== VECTOR FIELD (grid of airflow vectors) ==========
     
-    // Columns and rings for each thermal
-    THERMALS.forEach(t => {
-        // Semi-transparent column
-        const cylGeo = new THREE.CylinderGeometry(t.radius * 0.3, t.radius * 0.3, t.height, 16);
-        const cylMat = new THREE.MeshBasicMaterial({
-            color: THERMAL_COLOR,
-            transparent: true,
-            opacity: 0.06,
-            side: THREE.DoubleSide
-        });
-        const cyl = new THREE.Mesh(cylGeo, cylMat);
-        cyl.position.set(t.x, t.height / 2, t.z);
-        scene.add(cyl);
-        
-        // Ring at base
-        const ringGeo = new THREE.RingGeometry(t.radius * 0.2, t.radius, 24);
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: THERMAL_COLOR,
-            transparent: true,
-            opacity: 0.2,
-            side: THREE.DoubleSide
-        });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = -Math.PI / 2;
-        ring.position.set(t.x, 0.05, t.z);
-        scene.add(ring);
-        
-        thermalMeshes.push({ cyl, ring });
-    });
+    const totalVerts = VF_POINTS ** 3; // 1331
+    const vfPos = new Float32Array(totalVerts * 6); // start + end for each
+    const vfCol = new Float32Array(totalVerts * 6); // color per vertex
     
-    // Particle system for all thermals
-    const particleCount = THERMALS.length * 200;
-    const particleGeo = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const speeds = new Float32Array(particleCount);
-    particleSpeeds = speeds;
-    
-    for (let i = 0; i < particleCount; i++) {
-        const t = THERMALS[i % THERMALS.length];
-        const angle = Math.random() * Math.PI * 2;
-        const r = Math.random() * t.radius * 0.8;
-        positions[i*3] = t.x + Math.cos(angle) * r;
-        positions[i*3+1] = Math.random() * t.height;
-        positions[i*3+2] = t.z + Math.sin(angle) * r;
-        speeds[i] = 0.3 + Math.random() * 0.4;
+    for (let ix = 0; ix < VF_POINTS; ix++) {
+        for (let iy = 0; iy < VF_POINTS; iy++) {
+            for (let iz = 0; iz < VF_POINTS; iz++) {
+                const gx = ix * VF_STEP;
+                const gy = iy * VF_STEP;
+                const gz = iz * VF_STEP;
+                const idx = ix * VF_POINTS * VF_POINTS + iy * VF_POINTS + iz;
+                
+                // Вычисляем поток воздуха в этой точке
+                let fx = params.wind, fy = 0, fz = 0;
+                
+                // Термики: вертикальная составляющая
+                for (const t of THERMALS) {
+                    const dx = gx - t.x;
+                    const dz = gz - t.z;
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist < t.radius && gy < t.height) {
+                        const factor = (1 - dist/t.radius) * t.strength * (1 - gy/t.height);
+                        fy += factor;
+                    }
+                }
+                
+                // Шум турбулентности (стабильный, детерминированный)
+                if (params.turb > 0) {
+                    const h = hash3(ix, iy, iz);
+                    const h2 = hash3(ix+100, iy+200, iz+300);
+                    const h3 = hash3(ix+50, iy+150, iz+250);
+                    const turbScale = params.turb * 0.4;
+                    const heightFade = 0.3 + 0.7 * Math.exp(-gy / 4);
+                    fx += (h - 0.5) * turbScale * heightFade;
+                    fy += (h2 - 0.5) * turbScale * heightFade;
+                    fz += (h3 - 0.5) * turbScale * heightFade;
+                }
+                
+                // Длина вектора
+                const len = Math.sqrt(fx*fx + fy*fy + fz*fz);
+                const scale = 0.6;
+                const mag = Math.min(len / 2.5, 1);
+                
+                // Start point
+                vfPos[idx*6] = gx;
+                vfPos[idx*6+1] = gy;
+                vfPos[idx*6+2] = gz;
+                // End point
+                vfPos[idx*6+3] = gx + fx * scale;
+                vfPos[idx*6+4] = gy + fy * scale;
+                vfPos[idx*6+5] = gz + fz * scale;
+                
+                // Color: blue (weak) → red (strong)
+                const r = mag;
+                const g = 0.2 + (1-mag) * 0.5;
+                const b = 0.2 + (1-mag) * 0.5;
+                
+                for (let k = 0; k < 6; k += 3) {
+                    vfCol[idx*6+k] = r;
+                    vfCol[idx*6+k+1] = g;
+                    vfCol[idx*6+k+2] = b;
+                }
+            }
+        }
     }
     
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particleMat = new THREE.PointsMaterial({
-        color: THERMAL_COLOR,
-        size: 0.15,
+    const vfGeo = new THREE.BufferGeometry();
+    vfGeo.setAttribute('position', new THREE.BufferAttribute(vfPos, 3));
+    vfGeo.setAttribute('color', new THREE.BufferAttribute(vfCol, 3));
+    
+    const vfMat = new THREE.LineBasicMaterial({
+        vertexColors: true,
         transparent: true,
-        opacity: 0.5,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
+        opacity: 0.5
     });
-    thermalParticles = new THREE.Points(particleGeo, particleMat);
-    scene.add(thermalParticles);
-    particlePositions = positions;
+    
+    vectorField = new THREE.LineSegments(vfGeo, vfMat);
+    vectorField.position.set(0, 0, -5); // смещаем сетку левее старта
+    scene.add(vectorField);
     
     // Wind arrow on ground
     windArrow = new THREE.Group();
@@ -823,17 +852,12 @@ class PaperPlane {
 
         // Локальные восходящие потоки (термики)
         if (Vair > 0.5) {
-            const thermals = [
-                { x: 20, z: 0, radius: 5, strength: 0.4 },
-                { x: 45, z: 3, radius: 4, strength: 0.6 },
-                { x: 8,  z: -2, radius: 3, strength: 0.3 }
-            ];
-            for (const t of thermals) {
+            for (const t of THERMALS) {
                 const dx = x - t.x;
                 const dz = z - t.z;
                 const dist = Math.sqrt(dx*dx + dz*dz);
-                if (dist < t.radius) {
-                    const factor = (1 - dist/t.radius) * t.strength;
+                if (dist < t.radius && y < t.height) {
+                    const factor = (1 - dist/t.radius) * t.strength * (1 - y/t.height);
                     turbFy += factor * G * this.m;
                 }
             }
@@ -965,34 +989,6 @@ function updateScene() {
     if (isRunning) {
         controls.target.lerp(new THREE.Vector3(plane.x * 0.5, plane.y * 0.3 + 5, plane.z * 0.5), 0.02);
     }
-    
-    // Animate thermal particles
-    if (thermalParticles && particlePositions && particleSpeeds) {
-        for (let i = 0; i < particlePositions.length / 3; i++) {
-            const t = THERMALS[i % THERMALS.length];
-            particlePositions[i*3+1] += particleSpeeds[i] * 0.02;
-            if (particlePositions[i*3+1] > t.height) {
-                const angle = Math.random() * Math.PI * 2;
-                const r = Math.random() * t.radius * 0.8;
-                particlePositions[i*3] = t.x + Math.cos(angle) * r;
-                particlePositions[i*3+1] = 0.1;
-                particlePositions[i*3+2] = t.z + Math.sin(angle) * r;
-            }
-            // Wind drift for particles
-            if (params.wind !== 0) {
-                particlePositions[i*3] += params.wind * 0.002;
-            }
-        }
-        thermalParticles.geometry.attributes.position.needsUpdate = true;
-        
-        // Show/hide based on turbulence level
-        thermalParticles.visible = params.turb > 0.1;
-        thermalMeshes.forEach(m => {
-            m.cyl.visible = params.turb > 0.1;
-            m.ring.visible = params.turb > 0.1;
-        });
-    }
-    
     // Wind arrow
     if (windArrow) {
         if (params.wind !== 0) {
@@ -1021,6 +1017,72 @@ function updateLiveStats() {
 
 function updateStats() {
     updateLiveStats();
+}
+
+// ========== VECTOR FIELD UPDATE ==========
+
+function recomputeVectorField() {
+    if (!vectorField) return;
+    
+    const pos = vectorField.geometry.attributes.position.array;
+    const col = vectorField.geometry.attributes.color.array;
+    
+    for (let ix = 0; ix < VF_POINTS; ix++) {
+        for (let iy = 0; iy < VF_POINTS; iy++) {
+            for (let iz = 0; iz < VF_POINTS; iz++) {
+                const gx = ix * VF_STEP;
+                const gy = iy * VF_STEP;
+                const gz = iz * VF_STEP;
+                const idx = ix * VF_POINTS * VF_POINTS + iy * VF_POINTS + iz;
+                
+                let fx = params.wind, fy = 0, fz = 0;
+                
+                for (const t of THERMALS) {
+                    const dx = gx - t.x;
+                    const dz = gz - t.z;
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist < t.radius && gy < t.height) {
+                        const factor = (1 - dist/t.radius) * t.strength * (1 - gy/t.height);
+                        fy += factor;
+                    }
+                }
+                
+                if (params.turb > 0) {
+                    const h = hash3(ix, iy, iz);
+                    const h2 = hash3(ix+100, iy+200, iz+300);
+                    const h3 = hash3(ix+50, iy+150, iz+250);
+                    const turbScale = params.turb * 0.4;
+                    const heightFade = 0.3 + 0.7 * Math.exp(-gy / 4);
+                    fx += (h - 0.5) * turbScale * heightFade;
+                    fy += (h2 - 0.5) * turbScale * heightFade;
+                    fz += (h3 - 0.5) * turbScale * heightFade;
+                }
+                
+                const len = Math.sqrt(fx*fx + fy*fy + fz*fz);
+                const scale = 0.6;
+                const mag = Math.min(len / 2.5, 1);
+                
+                pos[idx*6] = gx;
+                pos[idx*6+1] = gy;
+                pos[idx*6+2] = gz;
+                pos[idx*6+3] = gx + fx * scale;
+                pos[idx*6+4] = gy + fy * scale;
+                pos[idx*6+5] = gz + fz * scale;
+                
+                const r = mag;
+                const g = 0.2 + (1-mag) * 0.5;
+                const b = 0.2 + (1-mag) * 0.5;
+                for (let k = 0; k < 6; k += 3) {
+                    col[idx*6+k] = r;
+                    col[idx*6+k+1] = g;
+                    col[idx*6+k+2] = b;
+                }
+            }
+        }
+    }
+    
+    vectorField.geometry.attributes.position.needsUpdate = true;
+    vectorField.geometry.attributes.color.needsUpdate = true;
 }
 
 // ==========================================
@@ -1052,6 +1114,8 @@ bindSlider('cl', 'CL', '');
 bindSlider('cd', 'CD', '');
 bindSlider('wind', 'wind', ' м/с');
 bindSlider('turb', 'turb', '');
+document.getElementById('wind').addEventListener('input', recomputeVectorField);
+document.getElementById('turb').addEventListener('input', recomputeVectorField);
 
 document.getElementById('shape').addEventListener('change', function() {
     const shape = this.value;
