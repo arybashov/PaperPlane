@@ -852,9 +852,9 @@ class PaperPlane {
             
             // Коррелированный шум: прошлое значение частично сохраняется
             this.turbMem = this.turbMem || { x: 0, y: 0, z: 0 };
-            this.turbMem.x = this.turbMem.x * 0.99 + (Math.random() - 0.5) * 0.04;
-            this.turbMem.y = this.turbMem.y * 0.99 + (Math.random() - 0.5) * 0.04;
-            this.turbMem.z = this.turbMem.z * 0.99 + (Math.random() - 0.5) * 0.04;
+            this.turbMem.x = this.turbMem.x * 0.998 + (Math.random() - 0.5) * 0.018;
+            this.turbMem.y = this.turbMem.y * 0.998 + (Math.random() - 0.5) * 0.018;
+            this.turbMem.z = this.turbMem.z * 0.998 + (Math.random() - 0.5) * 0.018;
             
             turb.tx = this.turbMem.x * s;
             turb.ty = this.turbMem.y * s * 0.5;
