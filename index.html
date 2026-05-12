@@ -323,53 +323,44 @@ let offsetY = 50;
 // ============================================
 class PaperPlane {
     constructor(v0, angleDeg, h0, mass, area, ar, cd0, clMax) {
-        this.m = mass / 1000;       // kg
-        this.S = area / 100;         // m²
+        this.m = mass / 1000;
+        this.S = area / 100;
         this.AR = ar;
-        this.b = Math.sqrt(this.S * this.AR);  // wingspan
-        this.c = this.S / this.b;               // mean chord
+        this.b = Math.sqrt(this.S * this.AR);
+        this.c = this.S / this.b;
         this.CD0 = cd0;
         this.CL_max = clMax;
-        this.CL_alpha = clMax / (14 * DEG2RAD); // CL reaches max at ~14°
+        this.CL_alpha = clMax / (14 * DEG2RAD);
         this.alpha_stall = 14 * DEG2RAD;
-        this.e = 0.70; // Oswald efficiency
-        this.Cm_alpha = -0.15;  // pitch stability
-        this.Cm_q = -3.0;       // pitch damping
-        this.Cm_de = -0.3;      // elevator effectiveness
-        this.x_cg_ac = 0.25 * this.c; // CG ahead of AC
+        this.e = 0.70;
 
-        // Position
+        // Pitch stability
+        this.alphaTrim = 3.0 * DEG2RAD;
+        this.Cm_alpha = -0.3;
+        this.Cm_q = -16.0;
+        this.Cm_de = -0.3;
+
+        // Large pitch inertia for smooth response
+        this.Iyy = this.m * this.b * this.b * 0.5;
+
+        this.turbMem = { x: 0, y: 0, z: 0 };
+
+        const ang = angleDeg * DEG2RAD;
         this.x = 0;
         this.y = h0;
         this.z = 0;
-
-        // Velocity (at launch angle)
-        const ang = angleDeg * DEG2RAD;
         this.vx = v0 * Math.cos(ang);
         this.vy = v0 * Math.sin(ang);
         this.vz = 0;
+        this.theta = ang + this.alphaTrim;
+        this.q = 0;
+        this.alpha = this.alphaTrim;
 
-        // Pitch angle: slightly above flight path for positive AOA
-        this.theta = ang + 3 * DEG2RAD; // ~3° trim AOA
-        this.q = 0;  // pitch rate
-
-        // Moments of inertia (thin plate approximation)
-        const L = 0.3; // body length (approximate for rotation)
-        this.Ixx = this.m * this.b * this.b / 12;
-        this.Iyy = this.m * L * L / 12;    // pitch
-        this.Izz = this.m * (this.b * this.b + L * L) / 12;
-
-        // Turbulence memory
-        this.turbMem = { x: 0, y: 0, z: 0 };
-
-        // State
         this.trail = [{ x: 0, y: h0, z: 0 }];
         this.t = 0;
         this.yMax = h0;
         this.vMax = v0;
         this.landed = false;
-        this.alpha = 0;
-        this.gamma = ang;
     }
 
     getV() {
@@ -392,7 +383,7 @@ class PaperPlane {
     }
 
     getCm(alpha, q, V) {
-        return this.Cm_alpha * alpha + this.Cm_q * q * this.c / (2 * V);
+        return this.Cm_alpha * (alpha - this.alphaTrim) + this.Cm_q * q * this.c / (2 * V + 0.1);
     }
 
     step(dt) {
