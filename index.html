@@ -4,1239 +4,339 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PaperPlane — Аэродинамика бумажного самолётика</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-    if (typeof OrbitControls !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
-        THREE.OrbitControls = OrbitControls;
-    }
+        if (typeof OrbitControls !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
+            THREE.OrbitControls = OrbitControls;
+        }
     </script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #eaeaea;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-        }
-        #sidebar {
-            width: 320px;
-            min-width: 320px;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        h1 { font-size: 20px; color: #e94560; margin-bottom: 4px; }
-        h2 { font-size: 13px; color: #a0a0a0; font-weight: 400; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        .section-title {
-            font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1.5px;
-            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; margin-top: 4px;
-        }
-        .control-group {
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            padding: 12px;
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .control-group label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #b0b0b0;
-            margin-bottom: 6px;
-        }
-        .control-group label span.value {
-            color: #e94560;
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
-        }
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255,255,255,0.1);
-            outline: none;
-            -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            background: #e94560;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-        }
-        select {
-            width: 100%; padding: 6px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.1);
-            color: #eaeaea;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .buttons { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-        button {
-            flex: 1; min-width: 80px;
-            padding: 10px 12px;
-            border: none; border-radius: 6px;
-            font-size: 12px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s;
-        }
-        button#launch { background: #e94560; color: white; }
-        button#launch:hover { background: #ff6b81; transform: translateY(-1px); }
-        button#clear { background: rgba(255,255,255,0.1); color: #eaeaea; }
-        button#clear:hover { background: rgba(255,255,255,0.2); }
-        button#toggle-view { background: #4ecca3; color: #000; }
-        button#optimize { background: #ffd700; color: #000; }
-        button#optimize:disabled { background: #555; color: #888; }
-        .stats {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            line-height: 1.8;
-        }
-        .stats .stat-row {
-            display: flex; justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding: 2px 0;
-        }
-        .stats .stat-label { color: #888; }
-        .stats .stat-value { color: #4ecca3; }
-        .divider { height: 1px; background: rgba(255,255,255,0.1); margin: 8px 0; }
-        #canvas-container { flex: 1; position: relative; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; }
-        #three-container {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: none;
-        }
-        .legend {
-            position: absolute; top: 16px; right: 16px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            padding: 10px 14px; border-radius: 8px;
-            font-size: 11px; color: #aaa; line-height: 1.6;
-        }
-        .legend-item { display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .dot.plane { background: #e94560; }
-        .dot.trail { background: #4ecca3; }
-        .dot.vel { background: #ffd700; }
-        .dot.field { background: #ff6633; }
-        .info-box {
-            background: rgba(233,69,96,0.1);
-            border: 1px solid rgba(233,69,96,0.3);
-            border-radius: 6px; padding: 10px;
-            font-size: 11px; line-height: 1.5; color: #ccc;
-        }
-    </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h1>PaperPlane</h1>
-    <span style="font-size:12px; color:#a0a0a0;">Аэродинамическая симуляция</span>
+    <div class="logo">
+        <div class="logo-icon">✈</div>
+        <div>
+            <h1>PaperPlane</h1>
+            <span>Аэродинамическая симуляция</span>
+        </div>
+    </div>
 
-    <button id="toggle-view" style="width:100%; padding:8px; margin-bottom:8px; font-weight:600;">Переключить на 3D</button>
-
-    <div class="section-title">Запуск</div>
+    <div class="section-title">Параметры запуска</div>
 
     <div class="control-group">
-        <label>Начальная скорость, м/с <span class="value" id="val-v0">12</span></label>
+        <label>Начальная скорость <span class="value" id="val-v0">12 м/с</span></label>
         <input type="range" id="v0" min="2" max="25" step="0.5" value="12">
     </div>
+
     <div class="control-group">
-        <label>Угол броска, ° <span class="value" id="val-angle">15</span></label>
-        <input type="range" id="angle" min="-30" max="60" step="1" value="15">
+        <label>Угол броска <span class="value" id="val-angle">5°</span></label>
+        <input type="range" id="angle" min="-30" max="60" step="1" value="5">
     </div>
+
     <div class="control-group">
         <label>Высота броска, м <span class="value" id="val-h0">2</span></label>
         <input type="range" id="h0" min="1" max="50" step="1" value="2">
     </div>
 
-    <div class="divider"></div>
-    <div class="section-title">Форма самолётика</div>
+    <select id="shape" class="hidden-control">
+        <option value="custom" selected>Своя конфигурация</option>
+    </select>
+
+    <div class="section-title">Среда</div>
 
     <div class="control-group">
-        <label>Пресет</label>
-        <select id="shape">
-            <option value="custom">Своя конфигурация</option>
-            <option value="dart">Стрелка</option>
-            <option value="glider">Планер</option>
-            <option value="delta">Дельта</option>
-        </select>
-    </div>
-
-    <div class="control-group">
-        <label>Масса, г <span class="value" id="val-mass">5</span></label>
-        <input type="range" id="mass" min="1" max="30" step="0.5" value="5">
-    </div>
-    <div class="control-group">
-        <label>Площадь крыла, дм² <span class="value" id="val-area">1.0</span></label>
-        <input type="range" id="area" min="0.3" max="4.0" step="0.05" value="1.0">
-    </div>
-    <div class="control-group">
-        <label>Стягивание (AR) <span class="value" id="val-ar">4.0</span></label>
-        <input type="range" id="ar" min="1.5" max="8" step="0.1" value="4.0">
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-title">Аэродинамика</div>
-
-    <div class="control-group">
-        <label>CD₀ (паразит) <span class="value" id="val-cd0">0.040</span></label>
-        <input type="range" id="cd0" min="0.01" max="0.15" step="0.005" value="0.040">
-    </div>
-    <div class="control-group">
-        <label>CL max (множитель) <span class="value" id="val-clmax">1.10</span></label>
-        <input type="range" id="clmax" min="0.3" max="2.0" step="0.05" value="1.10">
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-title">Атмосфера</div>
-
-    <div class="control-group">
-        <label>Ветер, м/с <span class="value" id="val-wind">0.0</span></label>
+        <label>Ветер <span class="value" id="val-wind">0 м/с</span></label>
         <input type="range" id="wind" min="-15" max="15" step="0.5" value="0">
     </div>
+
     <div class="control-group">
-        <label>Турбулентность <span class="value" id="val-turb">0.0</span></label>
+        <label>Турбулентность <span class="value" id="val-turb">0</span></label>
         <input type="range" id="turb" min="0" max="5" step="0.1" value="0">
     </div>
 
-    <div class="buttons">
-        <button id="launch">Запуск</button>
-        <button id="clear">Сброс</button>
-    </div>
-    <div class="buttons">
-        <button id="optimize">Оптимизация</button>
-    </div>
-    <div id="opt-status" style="font-size:11px; color:#aaa; line-height:1.4;"></div>
-
-    <div class="stats" id="stats">
-        <div class="stat-row"><span class="stat-label">Дальность:</span><span class="stat-value" id="s-distance">—</span></div>
-        <div class="stat-row"><span class="stat-label">Высота:</span><span class="stat-value" id="s-height">—</span></div>
-        <div class="stat-row"><span class="stat-label">Время полёта:</span><span class="stat-value" id="s-time">—</span></div>
-        <div class="stat-row"><span class="stat-label">Скорость:</span><span class="stat-value" id="s-vfinal">—</span></div>
-        <div class="stat-row"><span class="stat-label">Max V:</span><span class="stat-value" id="s-vmax">—</span></div>
-        <div class="stat-row"><span class="stat-label">α при вылете:</span><span class="stat-value" id="s-alpha">—</span></div>
-        <div class="stat-row"><span class="stat-label">K = L/D:</span><span class="stat-value" id="s-k">—</span></div>
-        <div class="stat-row"><span class="stat-label">Стабильность:</span><span class="stat-value" id="s-stable">—</span></div>
+    <div class="control-group">
+        <label>Восходящие потоки <span class="value" id="val-thermal">0</span></label>
+        <input type="range" id="thermal" min="0" max="8" step="0.1" value="0">
     </div>
 
-    <div class="divider"></div>
-    <div class="section-title">Помощь</div>
-    <div class="info-box">
-        <b>Управление:</b><br>
-        Space — пауза<br>
-        R — перезапуск<br>
-        Колёсико — зум камеры (3D)<br><br>
-        <b>Физика:</b><br>
-        • CL(α) — нелинейная кривая с срывом<br>
-        • CD = CD₀ + CL²/(π·e·AR)<br>
-        • Моменты Эйлера для тангажа<br>
-        • Ground effect при h << b<br>
-        • Коррелированная турбулентность<br>
+    <div class="btn-row">
+        <button class="primary" id="launch">🚀 Запуск</button>
+        <button class="secondary" id="pause">⏸ Пауза</button>
+        <button class="secondary" id="clear">↺ Сброс</button>
+    </div>
+
+    <button class="accent" id="optimize" style="width:100%; margin-top:4px;">⚡ Оптимизация</button>
+    <div id="opt-status"></div>
+
+    <div class="stats-panel">
+        <h3>Результаты полёта</h3>
+        <div class="stat-item">
+            <span class="stat-label">Дальность (X)</span>
+            <span class="stat-value" id="s-distance">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Боковое отклонение (Z)</span>
+            <span class="stat-value" id="s-zoffset">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Время полёта</span>
+            <span class="stat-value" id="s-time">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Макс. высота</span>
+            <span class="stat-value" id="s-hmax">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Конечная скорость</span>
+            <span class="stat-value" id="s-vfinal">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Скорость сваливания</span>
+            <span class="stat-value" id="s-vstall">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Нагрузка на крыло</span>
+            <span class="stat-value" id="s-wingload">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Качество L/D</span>
+            <span class="stat-value" id="s-ld">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Re крыла</span>
+            <span class="stat-value" id="s-re">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Static margin</span>
+            <span class="stat-value" id="s-static-margin">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Tail volume</span>
+            <span class="stat-value" id="s-tail-volume">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Подъем крыла / хвоста</span>
+            <span class="stat-value" id="s-lift-breakdown">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Pitch moment</span>
+            <span class="stat-value" id="s-pitch-moment">—</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Поток Y</span>
+            <span class="stat-value" id="s-flow-y">—</span>
+        </div>
     </div>
 </div>
 
-<div id="canvas-container">
-    <canvas id="simCanvas"></canvas>
-    <div id="three-container"></div>
-    <div class="legend">
-        <div class="legend-item"><div class="dot plane"></div>Самолётик</div>
-        <div class="legend-item"><div class="dot trail"></div>Траектория</div>
-        <div class="legend-item"><div class="dot vel"></div>Скорость</div>
-        <div class="legend-item"><div class="dot field"></div>Вект. поле</div>
+<div id="main-area">
+    <div id="scene-container">
+        <div class="hud">
+            <div class="hud-item">Скорость: <strong id="hud-speed">— м/с</strong></div>
+            <div class="hud-item">Vs: <strong id="hud-vstall">— м/с</strong></div>
+            <div class="hud-item">L/D: <strong id="hud-ld">—</strong></div>
+            <div class="hud-item">α: <strong id="hud-alpha">—°</strong></div>
+            <div class="hud-item">γ: <strong id="hud-gamma">—°</strong></div>
+            <div class="hud-item">pitch: <strong id="hud-pitch">—°</strong></div>
+            <div class="hud-item">Высота: <strong id="hud-alt">— м</strong></div>
+            <div class="hud-item">Отклонение Z: <strong id="hud-z">— м</strong></div>
+        </div>
+        <div class="controls-hint">
+            <span>🖱 ЛКМ</span> вращать · <span>🖱 ПКМ</span> двигать · <span>🖱 Колёсико</span> зум
+        </div>
+    </div>
+
+<div id="constructor-window" class="constructor-window" aria-hidden="false">
+    <div class="constructor-panel">
+        <div class="constructor-header">
+            <div>
+                <h2>Конструктор</h2>
+                <span id="design-summary">b 0.22 м · c 0.06 м · Λ 15°</span>
+            </div>
+        </div>
+
+        <div class="constructor-layout">
+            <div class="constructor-preview large">
+                <svg id="constructor-svg" viewBox="0 0 260 130" aria-hidden="true"></svg>
+            </div>
+
+            <div class="constructor-controls">
+                <div class="control-group preset-control">
+                    <label style="margin-bottom:10px;">Пресет модели</label>
+                    <select id="aircraft-preset">
+                        <option value="booSlope800" selected>BOO Slope Glider 800 mm</option>
+                        <option value="custom">Своя конфигурация</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label style="margin-bottom:10px;">Профиль крыла</label>
+                    <select id="airfoil">
+                        <option value="flatPlate">Плоская пластина</option>
+                        <option value="creasedPaper">Сложенный лист</option>
+                        <option value="camberedPlate">Выгнутый лист</option>
+                        <option value="naca0012">NACA 0012</option>
+                        <option value="naca2412">NACA 2412</option>
+                        <option value="e387Uiuc200k" selected>E387 UIUC Re 200k</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Масса <span class="value" id="val-mass">170 г</span></label>
+                    <input type="range" id="mass" min="20" max="250" step="1" value="170">
+                </div>
+
+                <div class="control-group">
+                    <label style="margin-bottom:10px;">Центр масс</label>
+                    <div class="segmented-control" id="cg-mode">
+                        <button type="button" class="segment active" data-cg-mode="calculated">Расчет</button>
+                        <button type="button" class="segment" data-cg-mode="manual">Ручной</button>
+                    </div>
+                </div>
+
+                <div class="control-group cg-manual-control">
+                    <label>ЦТ от передней кромки <span class="value" id="val-cgFromWingLE">0.039 м</span></label>
+                    <input type="range" id="cgFromWingLE" min="0.005" max="0.120" step="0.001" value="0.039">
+                </div>
+
+                <div class="control-group">
+                    <label>Масса носа <span class="value" id="val-noseMass">47 г</span></label>
+                    <input type="range" id="noseMass" min="0" max="120" step="1" value="47">
+                </div>
+
+                <div class="control-group">
+                    <label>Положение носовой массы <span class="value" id="val-noseMassX">0.058 м</span></label>
+                    <input type="range" id="noseMassX" min="0" max="0.25" step="0.001" value="0.058">
+                </div>
+
+                <div class="control-group">
+                    <label>Масса крыла <span class="value" id="val-wingMass">60 г</span></label>
+                    <input type="range" id="wingMass" min="0" max="140" step="1" value="60">
+                </div>
+
+                <div class="control-group">
+                    <label>Масса фюзеляжа <span class="value" id="val-fuselageMass">45 г</span></label>
+                    <input type="range" id="fuselageMass" min="0" max="140" step="1" value="45">
+                </div>
+
+                <div class="control-group">
+                    <label>Масса хвоста <span class="value" id="val-tailMass">18 г</span></label>
+                    <input type="range" id="tailMass" min="0" max="80" step="1" value="18">
+                </div>
+
+                <div class="control-group">
+                    <label>Передняя кромка крыла <span class="value" id="val-wingLE">0.16 м</span></label>
+                    <input type="range" id="wingLE" min="0.02" max="1.10" step="0.005" value="0.16">
+                </div>
+
+                <div class="control-group">
+                    <label>Размах крыла <span class="value" id="val-wingSpan">0.80 м</span></label>
+                    <input type="range" id="wingSpan" min="0.10" max="1.50" step="0.005" value="0.80">
+                </div>
+
+                <div class="control-group">
+                    <label>Корневая хорда <span class="value" id="val-rootChord">0.115 м</span></label>
+                    <input type="range" id="rootChord" min="0.02" max="0.35" step="0.005" value="0.115">
+                </div>
+
+                <div class="control-group">
+                    <label>Концевая хорда <span class="value" id="val-tipChord">0.08 м</span></label>
+                    <input type="range" id="tipChord" min="0.01" max="0.30" step="0.005" value="0.08">
+                </div>
+
+                <div class="control-group">
+                    <label>Стреловидность <span class="value" id="val-sweep">0.0°</span></label>
+                    <input type="range" id="sweep" min="-20" max="55" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Длина фюзеляжа <span class="value" id="val-fuselageLength">0.485 м</span></label>
+                    <input type="range" id="fuselageLength" min="0.35" max="1.50" step="0.005" value="0.485">
+                </div>
+
+                <div class="control-group">
+                    <label style="margin-bottom:10px;">Оперение</label>
+                    <div class="segmented-control" id="tail-mode">
+                        <button type="button" class="segment active" data-tail-mode="vTail">V</button>
+                        <button type="button" class="segment" data-tail-mode="conventional">Классика</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Хвост от носа <span class="value" id="val-tailX">0.455 м</span></label>
+                    <input type="range" id="tailX" min="0.12" max="1.50" step="0.005" value="0.455">
+                </div>
+
+                <div class="control-group fin-control">
+                    <label>Киль от носа <span class="value" id="val-finX">0.435 м</span></label>
+                    <input type="range" id="finX" min="0.12" max="1.50" step="0.005" value="0.435">
+                </div>
+
+                <div class="control-group">
+                    <label>Размах хвоста <span class="value" id="val-tailSpan">0.25 м</span></label>
+                    <input type="range" id="tailSpan" min="0.04" max="0.80" step="0.005" value="0.25">
+                </div>
+
+                <div class="control-group">
+                    <label>Корневая хорда хвоста <span class="value" id="val-tailRootChord">0.07 м</span></label>
+                    <input type="range" id="tailRootChord" min="0.015" max="0.30" step="0.005" value="0.07">
+                </div>
+
+                <div class="control-group">
+                    <label>Концевая хорда хвоста <span class="value" id="val-tailTipChord">0.045 м</span></label>
+                    <input type="range" id="tailTipChord" min="0.01" max="0.25" step="0.005" value="0.045">
+                </div>
+
+                <div class="control-group fin-control">
+                    <label>Высота киля <span class="value" id="val-finHeight">0 м</span></label>
+                    <input type="range" id="finHeight" min="0" max="0.50" step="0.005" value="0">
+                </div>
+
+                <div class="control-group fin-control">
+                    <label>Корневая хорда киля <span class="value" id="val-finRootChord">0.06 м</span></label>
+                    <input type="range" id="finRootChord" min="0.015" max="0.30" step="0.005" value="0.06">
+                </div>
+
+                <div class="control-group fin-control">
+                    <label>Концевая хорда киля <span class="value" id="val-finTipChord">0.035 м</span></label>
+                    <input type="range" id="finTipChord" min="0.01" max="0.25" step="0.005" value="0.035">
+                </div>
+
+                <div class="control-group fin-control">
+                    <label>Масса киля <span class="value" id="val-finMass">0 г</span></label>
+                    <input type="range" id="finMass" min="0" max="50" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Стреловидность хвоста <span class="value" id="val-tailSweep">0.0°</span></label>
+                    <input type="range" id="tailSweep" min="-15" max="35" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Угол крыла <span class="value" id="val-wingIncidence">0.0°</span></label>
+                    <input type="range" id="wingIncidence" min="-6" max="12" step="0.5" value="0.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Угол хвоста <span class="value" id="val-tailIncidence">-0.5°</span></label>
+                    <input type="range" id="tailIncidence" min="-12" max="8" step="0.1" value="-0.5">
+                </div>
+
+                <div class="control-group">
+                    <label>Диэдрал <span class="value" id="val-dihedral">8.0°</span></label>
+                    <input type="range" id="dihedral" min="0" max="25" step="0.5" value="8.0">
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-<script>
-// ============================================
-// CONSTANTS
-// ============================================
-const DEG2RAD = Math.PI / 180;
-const RAD2DEG = 180 / Math.PI;
-const RHO = 1.225;
-const G = 9.81;
-
-// ============================================
-// PLANETARY MODELS (THERMALS FOR VECTOR FIELD)
-// ============================================
-const THERMALS = [
-    { x: 20, z: 0,   radius: 5, strength: 0.4, height: 8 },
-    { x: 45, z: 3,   radius: 4, strength: 0.6, height: 10 },
-    { x: 8,  z: -2,  radius: 3, strength: 0.3, height: 6 },
-    { x: 30, z: -8,  radius: 4, strength: 0.35, height: 7 }
-];
-
-const VF_W = 30, VF_H = 15, VF_STEP = 1;
-const VF_NX = Math.floor(VF_W / VF_STEP) + 1; // 31
-const VF_NY = Math.floor(VF_H / VF_STEP) + 1; // 16
-const VF_NZ = Math.floor(VF_W / VF_STEP) + 1; // 31
-
-function hash3(x, y, z) {
-    let h = (x * 374761393 + y * 668265263 + z * 1274126177) | 0;
-    h = ((h ^ (h >>> 13)) * 1274126177) | 0;
-    return ((h ^ (h >>> 16)) & 0x7fffffff) / 0x7fffffff;
-}
-
-// ============================================
-// SHAPE PRESETS
-// ============================================
-const SHAPES = {
-    dart:   { mass:3.5, area:0.7,  cd0:0.065, clMax:1.1, ar:2.5, name:'Стрелка' },
-    glider: { mass:5.5, area:1.5,  cd0:0.030, clMax:1.3, ar:5.5, name:'Планер' },
-    delta:  { mass:4.5, area:1.0,  cd0:0.040, clMax:1.15, ar:3.5, name:'Дельта' }
-};
-
-// ============================================
-// SIMULATION STATE
-// ============================================
-let params = {
-    v0: 12, angle: 15, h0: 2,
-    mass: 5, area: 1.0, ar: 4.0,
-    cd0: 0.040, clMax: 1.10,
-    wind: 0.0, turb: 0.0,
-    shape: 'custom'
-};
-
-let plane = null;
-let trails = [];
-let isRunning = false;
-let lastTime = 0;
-let simTime = 0;
-let scale = 20;
-let offsetX = 50;
-let offsetY = 50;
-
-// ============================================
-// PAPER PLANE CLASS — FULL PHYSICS
-// ============================================
-class PaperPlane {
-    constructor(v0, angleDeg, h0, mass, area, ar, cd0, clMax) {
-        this.m = mass / 1000;
-        this.S = area / 100;
-        this.AR = ar;
-        this.b = Math.sqrt(this.S * this.AR);
-        this.c = this.S / this.b;
-        this.CD0 = cd0;
-        this.CL_max = clMax;
-        this.CL_alpha = clMax / (14 * DEG2RAD);
-        this.alpha_stall = 14 * DEG2RAD;
-        this.e = 0.70;
-
-        // Pitch stability
-        this.alphaTrim = 3.0 * DEG2RAD;
-        this.Cm_alpha = -0.3;
-        this.Cm_q = -16.0;
-        this.Cm_de = -0.3;
-
-        // Large pitch inertia for smooth response
-        this.Iyy = this.m * this.b * this.b * 0.5;
-
-        this.turbMem = { x: 0, y: 0, z: 0 };
-
-        const ang = angleDeg * DEG2RAD;
-        this.x = 0;
-        this.y = h0;
-        this.z = 0;
-        this.vx = v0 * Math.cos(ang);
-        this.vy = v0 * Math.sin(ang);
-        this.vz = 0;
-        this.theta = ang + this.alphaTrim;
-        this.q = 0;
-        this.alpha = this.alphaTrim;
-
-        this.trail = [{ x: 0, y: h0, z: 0 }];
-        this.t = 0;
-        this.yMax = h0;
-        this.vMax = v0;
-        this.landed = false;
-    }
-
-    getV() {
-        return Math.sqrt(this.vx * this.vx + this.vy * this.vy + this.vz * this.vz);
-    }
-
-    getCL(alpha) {
-        // Thin airfoil + soft stall
-        let cl = this.CL_alpha * alpha;
-        if (alpha > this.alpha_stall) {
-            cl = this.CL_max * Math.cos((alpha - this.alpha_stall) * 1.8);
-        } else if (alpha < -this.alpha_stall) {
-            cl = -this.CL_max * Math.cos((-alpha - this.alpha_stall) * 1.8);
-        }
-        return cl;
-    }
-
-    getCD(CL) {
-        return this.CD0 + CL * CL / (Math.PI * this.e * this.AR);
-    }
-
-    getCm(alpha, q, V) {
-        return this.Cm_alpha * (alpha - this.alphaTrim) + this.Cm_q * q * this.c / (2 * V + 0.1);
-    }
-
-    step(dt) {
-        if (this.landed) return;
-
-        // Sample turbulence ONCE per step
-        const turb = this.computeTurbulence();
-
-        // RK4
-        let state = [this.x, this.y, this.z, this.vx, this.vy, this.vz, this.theta, this.q];
-        const k1 = this.derivs(state, turb);
-        const s2 = state.map((s, i) => s + k1[i] * dt / 2);
-        const k2 = this.derivs(s2, turb);
-        const s3 = state.map((s, i) => s + k2[i] * dt / 2);
-        const k3 = this.derivs(s3, turb);
-        const s4 = state.map((s, i) => s + k3[i] * dt);
-        const k4 = this.derivs(s4, turb);
-
-        for (let i = 0; i < 8; i++) {
-            state[i] += (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) * dt / 6;
-        }
-
-        [this.x, this.y, this.z, this.vx, this.vy, this.vz, this.theta, this.q] = state;
-
-        // Ground
-        if (this.y <= 0) {
-            this.y = 0;
-            this.theta = Math.max(-10 * DEG2RAD, this.theta);
-            this.q *= 0.3;
-            if (this.vy < 0.5 && this.vy > -0.5) {
-                this.vy = 0;
-                this.landed = true;
-            } else {
-                this.vy = Math.abs(this.vy) * 0.4;
-            }
-        }
-
-        this.t += dt;
-        if (this.y > this.yMax) this.yMax = this.y;
-        if (this.getV() > this.vMax) this.vMax = this.getV();
-        this.alpha = this.alpha;
-
-        // Record trail
-        const last = this.trail[this.trail.length - 1];
-        const dist = Math.hypot(this.x - last.x, this.y - last.y, this.z - last.z);
-        if (dist > 0.15) {
-            this.trail.push({ x: this.x, y: this.y, z: this.z });
-        }
-    }
-
-    computeTurbulence() {
-        const V = this.getV();
-        const turb = { tx: 0, ty: 0, tz: 0 };
-        if (params.turb <= 0 || V < 0.1) return turb;
-
-        const heightFade = 0.3 + 2.0 * Math.exp(-this.y / 4.0);
-        const amp = params.turb * 0.5 * G * this.m;
-        const s = heightFade * amp;
-
-        if (!this.turbMem) this.turbMem = { x: 0, y: 0, z: 0 };
-        this.turbMem.x = this.turbMem.x * 0.997 + (Math.random() - 0.5) * 0.006;
-        this.turbMem.y = this.turbMem.y * 0.997 + (Math.random() - 0.5) * 0.006;
-        this.turbMem.z = this.turbMem.z * 0.997 + (Math.random() - 0.5) * 0.006;
-
-        turb.tx = this.turbMem.x * s * 0.5;
-        turb.ty = this.turbMem.y * s;
-        turb.tz = this.turbMem.z * s * 0.5;
-        return turb;
-    }
-
-    derivs(state, turb) {
-        const [x, y, z, vx, vy, vz, theta, q] = state;
-
-        // Airspeed
-        const vxAir = vx - params.wind;
-        const vyAir = vy;
-        const vzAir = vz;
-        const V = Math.sqrt(vxAir * vxAir + vyAir * vyAir + vzAir * vzAir);
-
-        if (V < 0.1) return [0, 0, 0, 0, -G, 0, 0, 0];
-
-        const Vh = Math.sqrt(vxAir * vxAir + vzAir * vzAir);
-        const gamma = Math.atan2(vyAir, Vh || 0.001); // flight path angle
-        const alpha = theta - gamma; // angle of attack
-        this.alpha = alpha;
-        this.gamma = gamma;
-
-        // Aero coefficients
-        const CL = this.getCL(alpha);
-        const CD = this.getCD(CL);
-        const qdyn = 0.5 * RHO * V * V * this.S;
-
-        // Ground effect
-        let geFactor = 1.0;
-        let geCLBoost = 0;
-        if (y < this.b * 2 && y > 0.01) {
-            const h_b = y / this.b;
-            geFactor = 1.0 / (1.0 + 0.25 * (this.b / y) ** 2);
-            geCLBoost = (1 - geFactor) * 0.3; // extra lift
-        }
-
-        // Forces in flight-path coordinates
-        const L = qdyn * (CL + geCLBoost);
-        const D = qdyn * (CD * (1 - 0.3 * (1 - geFactor)));
-
-        // Unit vectors
-        const sinGamma = Math.sin(gamma);
-        const cosGamma = Math.cos(gamma);
-
-        let Fx_aero, Fy_aero, Fz_aero;
-        if (Vh > 0.01) {
-            const ux = vxAir / V;
-            const uy = vyAir / V;
-            const uz = vzAir / V;
-
-            // Lift direction: perp to velocity in vertical plane containing velocity
-            const nx = -ux * sinGamma / (Vh / V);
-            const ny = cosGamma;
-            const nz = -uz * sinGamma / (Vh / V);
-            const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-
-            Fx_aero = L * (nx / nLen) - D * ux;
-            Fy_aero = L * (ny / nLen) - D * uy;
-            Fz_aero = L * (nz / nLen) - D * uz;
-        } else {
-            // Fallback for near-zero horizontal speed
-            const heading = Math.atan2(vzAir, vxAir);
-            Fx_aero = L * (-sinGamma * Math.cos(heading)) - D * Math.cos(gamma) * Math.cos(heading);
-            Fy_aero = L * cosGamma - D * sinGamma;
-            Fz_aero = L * (-sinGamma * Math.sin(heading)) - D * Math.cos(gamma) * Math.sin(heading);
-        }
-
-        // Sideslip force (dihedral effect)
-        const beta = Math.atan2(-vzAir, Vh);
-        const CY_dihedral = -0.3 * Math.sin(2 * beta); // dihedral provides lateral stability
-        const Fy_side = qdyn * this.S * CY_dihedral * 0.5;
-        Fz_aero += Fy_side * Math.sin(beta) * 0.3;
-
-        // Add turbulence
-        const Fx = Fx_aero + turb.tx;
-        const Fy = Fy_aero + turb.ty;
-        const Fz = Fz_aero + turb.tz;
-
-        // Pitching moment
-        const Cm = this.getCm(alpha, q, V);
-        const M = qdyn * this.S * this.c * Cm;
-
-        // Equations of motion
-        const ax = Fx / this.m;
-        const ay = Fy / this.m - G;
-        const az = Fz / this.m;
-        const thetaDot = q;
-        const qDot = M / this.Iyy;
-
-        return [vx, vy, vz, ax, ay, az, thetaDot, qDot];
-    }
-}
-
-// ============================================
-// 3D SCENE
-// ============================================
-let scene, camera, renderer, controls;
-let planeMesh, trailLine, gridHelper;
-let sceneInitialized = false;
-let vectorField = null;
-let windArrow = null;
-
-function initScene() {
-    if (sceneInitialized) return;
-
-    const container = document.getElementById('scene-container');
-
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a12);
-    scene.fog = new THREE.FogExp2(0x0a0a12, 0.008);
-
-    camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(25, 30, 40);
-
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
-
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.05;
-    controls.minDistance = 5;
-    controls.maxDistance = 150;
-    controls.target.set(15, 5, -2.5);
-
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    scene.add(new THREE.HemisphereLight(0x4ecca3, 0x1a2f23, 0.3));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(50, 80, 30);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.near = 10;
-    dirLight.shadow.camera.far = 200;
-    dirLight.shadow.camera.left = -80;
-    dirLight.shadow.camera.right = 80;
-    dirLight.shadow.camera.top = 80;
-    dirLight.shadow.camera.bottom = -80;
-    scene.add(dirLight);
-
-    // Ground
-    const groundGeo = new THREE.PlaneGeometry(400, 400);
-    const groundMat = new THREE.MeshStandardMaterial({
-        color: 0x0d1a14, roughness: 0.9, metalness: 0.1
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
-
-    // Grid
-    gridHelper = new THREE.GridHelper(200, 50, 0x1a3d2e, 0x0f1f18);
-    gridHelper.position.y = 0.01;
-    scene.add(gridHelper);
-
-    // Distance markers
-    for (let d = 0; d <= 100; d += 10) {
-        const markerGeo = new THREE.PlaneGeometry(0.3, 0.3);
-        const markerMat = new THREE.MeshBasicMaterial({
-            color: 0x4ecca3, transparent: true, opacity: 0.6
-        });
-        const marker = new THREE.Mesh(markerGeo, markerMat);
-        marker.rotation.x = -Math.PI / 2;
-        marker.position.set(d, 0.02, -2.5);
-        scene.add(marker);
-    }
-
-    createPlaneModel();
-
-    // Trail line
-    const trailGeo = new THREE.BufferGeometry();
-    const trailMat = new THREE.LineBasicMaterial({
-        color: 0x4ecca3, transparent: true, opacity: 0.8
-    });
-    trailLine = new THREE.Line(trailGeo, trailMat);
-    scene.add(trailLine);
-
-    window.oldTrailLines = [];
-
-    // ========== VECTOR FIELD ==========
-    const totalVerts = VF_NX * VF_NY * VF_NZ;
-    const vfPos = new Float32Array(totalVerts * 6);
-    const vfCol = new Float32Array(totalVerts * 6);
-
-    for (let ix = 0; ix < VF_NX; ix++) {
-        for (let iy = 0; iy < VF_NY; iy++) {
-            for (let iz = 0; iz < VF_NZ; iz++) {
-                const gx = ix * VF_STEP;
-                const gy = iy * VF_STEP;
-                const gz = iz * VF_STEP;
-                const idx = (ix * VF_NY * VF_NZ) + (iy * VF_NZ) + iz;
-
-                let fx = params.wind, fy = 0, fz = 0;
-                for (const t of THERMALS) {
-                    const dx = gx - t.x;
-                    const dz = gz - t.z;
-                    const dist = Math.sqrt(dx * dx + dz * dz);
-                    if (dist < t.radius && gy < t.height) {
-                        const factor = (1 - dist / t.radius) * t.strength * (1 - gy / t.height);
-                        fy += factor;
-                    }
-                }
-                if (params.turb > 0) {
-                    const h = hash3(ix, iy, iz);
-                    const h2 = hash3(ix + 100, iy + 200, iz + 300);
-                    const h3 = hash3(ix + 50, iy + 150, iz + 250);
-                    const turbScale = params.turb * 0.4;
-                    const hf = 0.3 + 0.7 * Math.exp(-gy / 4);
-                    fx += h * turbScale * hf;
-                    fy += h2 * turbScale * hf;
-                    fz += h3 * turbScale * hf;
-                }
-
-                const len = Math.sqrt(fx * fx + fy * fy + fz * fz);
-                const scale = 0.4;
-                const mag = Math.min(len / 2, 1);
-
-                // Start
-                vfPos[idx * 6] = gx;
-                vfPos[idx * 6 + 1] = gy;
-                vfPos[idx * 6 + 2] = gz - VF_W / 2;
-                // End
-                vfPos[idx * 6 + 3] = gx + fx * scale;
-                vfPos[idx * 6 + 4] = gy + fy * scale;
-                vfPos[idx * 6 + 5] = gz - VF_W / 2 + fz * scale;
-
-                const r = mag;
-                const g = 0.2 + (1 - mag) * 0.5;
-                const b = 0.2 + (1 - mag) * 0.5;
-                for (let k = 0; k < 6; k += 3) {
-                    vfCol[idx * 6 + k] = r;
-                    vfCol[idx * 6 + k + 1] = g;
-                    vfCol[idx * 6 + k + 2] = b;
-                }
-            }
-        }
-    }
-
-    const vfGeo = new THREE.BufferGeometry();
-    vfGeo.setAttribute('position', new THREE.BufferAttribute(vfPos, 3));
-    vfGeo.setAttribute('color', new THREE.BufferAttribute(vfCol, 3));
-    const vfMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.5 });
-    vectorField = new THREE.LineSegments(vfGeo, vfMat);
-    vectorField.position.set(0, 0, -VF_W / 2);
-    scene.add(vectorField);
-
-    // Wind arrow
-    windArrow = new THREE.Group();
-    const arrowLen = 4;
-    const shaftGeo = new THREE.BoxGeometry(arrowLen, 0.05, 0.05);
-    const shaftMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3 });
-    const shaft = new THREE.Mesh(shaftGeo, shaftMat);
-    shaft.position.x = arrowLen / 2;
-    windArrow.add(shaft);
-    const headGeo = new THREE.ConeGeometry(0.2, 0.5, 6);
-    const headMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.4 });
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.position.x = arrowLen;
-    head.rotation.z = -Math.PI / 2;
-    windArrow.add(head);
-    windArrow.position.set(-5, 0.1, -6);
-    scene.add(windArrow);
-
-    sceneInitialized = true;
-}
-
-function createPlaneModel() {
-    const planeGroup = new THREE.Group();
-
-    // Main body
-    const bodyGeo = new THREE.ConeGeometry(0.25, 2, 4);
-    const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0xe94560, roughness: 0.3, metalness: 0.5, flatShading: true
-    });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.rotation.z = -Math.PI / 2;
-    body.position.x = 0.5;
-    body.castShadow = true;
-    planeGroup.add(body);
-
-    // Wings
-    const wingGeo = new THREE.BoxGeometry(0.8, 0.03, 2);
-    const wingMat = new THREE.MeshStandardMaterial({
-        color: 0xff6b81, roughness: 0.4, metalness: 0.3, flatShading: true
-    });
-    const wings = new THREE.Mesh(wingGeo, wingMat);
-    wings.position.set(-0.2, 0.05, 0);
-    wings.castShadow = true;
-    planeGroup.add(wings);
-
-    // Tail
-    const tailGeo = new THREE.BoxGeometry(0.5, 0.5, 0.03);
-    const tail = new THREE.Mesh(tailGeo, wingMat);
-    tail.position.set(-1, 0.25, 0);
-    tail.castShadow = true;
-    planeGroup.add(tail);
-
-    planeMesh = planeGroup;
-    scene.add(planeMesh);
-}
-
-// ============================================
-// VECTOR FIELD UPDATE
-// ============================================
-function recomputeVectorField(time) {
-    if (!vectorField) return;
-    time = time || 0;
-
-    const pos = vectorField.geometry.attributes.position.array;
-    const col = vectorField.geometry.attributes.color.array;
-
-    for (let ix = 0; ix < VF_NX; ix++) {
-        for (let iy = 0; iy < VF_NY; iy++) {
-            for (let iz = 0; iz < VF_NZ; iz++) {
-                const gx = ix * VF_STEP;
-                const gy = iy * VF_STEP;
-                const gz = iz * VF_STEP;
-                const idx = (ix * VF_NY * VF_NZ) + (iy * VF_NZ) + iz;
-
-                let fx = params.wind, fy = 0, fz = 0;
-
-                for (const t of THERMALS) {
-                    const dx = gx - t.x;
-                    const dz = gz - t.z;
-                    const dist = Math.sqrt(dx * dx + dz * dz);
-                    if (dist < t.radius && gy < t.height) {
-                        const factor = (1 - dist / t.radius) * t.strength * (1 - gy / t.height);
-                        fy += factor;
-                    }
-                }
-                if (params.turb > 0) {
-                    const hf = 0.3 + 0.7 * Math.exp(-gy / 4);
-                    const ts = params.turb * 0.4;
-                    // Slow oscillation using sin with unique freq per point
-                    const f1 = 0.3 + hash3(ix, iy, iz) * 1.2;
-                    const f2 = 0.3 + hash3(ix + 100, iy + 200, iz + 300) * 1.2;
-                    const f3 = 0.3 + hash3(ix + 50, iy + 150, iz + 250) * 1.2;
-                    fx += Math.sin(time * f1 + ix) * ts * hf;
-                    fy += Math.sin(time * f2 + iy) * ts * hf;
-                    fz += Math.sin(time * f3 + iz) * ts * hf;
-                }
-
-                const len = Math.sqrt(fx * fx + fy * fy + fz * fz);
-                const sc = 0.4;
-                const mag = Math.min(len / 2, 1);
-
-                pos[idx * 6] = gx;
-                pos[idx * 6 + 1] = gy;
-                pos[idx * 6 + 2] = gz - VF_W / 2;
-                pos[idx * 6 + 3] = gx + fx * sc;
-                pos[idx * 6 + 4] = gy + fy * sc;
-                pos[idx * 6 + 5] = gz - VF_W / 2 + fz * sc;
-
-                const r = mag;
-                const cn = 0.2 + (1 - mag) * 0.5;
-                for (let k = 0; k < 6; k += 3) {
-                    col[idx * 6 + k] = r;
-                    col[idx * 6 + k + 1] = cn;
-                    col[idx * 6 + k + 2] = cn;
-                }
-            }
-        }
-    }
-
-    vectorField.geometry.attributes.position.needsUpdate = true;
-    vectorField.geometry.attributes.color.needsUpdate = true;
-}
-
-// ============================================
-// CONTROLS AND BINDING
-// ============================================
-function bindSlider(id, param, suffix = '') {
-    const slider = document.getElementById(id);
-    const display = document.getElementById('val-' + id);
-    slider.addEventListener('input', () => {
-        params[param] = parseFloat(slider.value);
-        display.textContent = suffix ? params[param] + ' ' + suffix : params[param].toFixed(3);
-        if (param === 'ar' || param === 'cd0' || param === 'clmax') {
-            // Update K display (qualitative)
-        }
-    });
-}
-
-document.getElementById('shape').addEventListener('change', function () {
-    const shape = this.value;
-    params.shape = shape;
-    if (shape !== 'custom' && SHAPES[shape]) {
-        const s = SHAPES[shape];
-        params.mass = s.mass;
-        params.area = s.area;
-        params.ar = s.ar;
-        params.cd0 = s.cd0;
-        params.clMax = s.clMax;
-        document.getElementById('mass').value = s.mass;
-        document.getElementById('area').value = s.area;
-        document.getElementById('ar').value = s.ar;
-        document.getElementById('cd0').value = s.cd0;
-        document.getElementById('clmax').value = s.clMax;
-        document.getElementById('val-mass').textContent = s.mass;
-        document.getElementById('val-area').textContent = s.area;
-        document.getElementById('val-ar').textContent = s.ar.toFixed(1);
-        document.getElementById('val-cd0').textContent = s.cd0.toFixed(3);
-        document.getElementById('val-clmax').textContent = s.clMax.toFixed(2);
-    }
-});
-
-function launch() {
-    if (plane) {
-        trails.push(plane.trail.slice());
-    }
-    plane = new PaperPlane(params.v0, params.angle, params.h0, params.mass, params.area, params.ar, params.cd0, params.clMax);
-    isRunning = true;
-    lastTime = 0;
-    simTime = 0;
-}
-
-function clearAll() {
-    plane = null;
-    trails = [];
-    isRunning = false;
-    ['distance', 'height', 'time', 'vfinal', 'vmax', 'alpha', 'k', 'stable'].forEach(id => {
-        document.getElementById('s-' + id).textContent = '—';
-    });
-}
-
-document.getElementById('launch').addEventListener('click', launch);
-document.getElementById('clear').addEventListener('click', clearAll);
-
-// Toggle 2D/3D
-let is3D = false;
-document.getElementById('toggle-view').addEventListener('click', function () {
-    const btn = this;
-    const canvas2D = document.getElementById('simCanvas');
-    const container3D = document.getElementById('three-container');
-    if (!is3D) {
-        if (!sceneInitialized) initScene();
-        canvas2D.style.display = 'none';
-        container3D.style.display = 'block';
-        is3D = true;
-        btn.textContent = 'Переключить на 2D';
-        updateThree();
-    } else {
-        canvas2D.style.display = 'block';
-        container3D.style.display = 'none';
-        is3D = false;
-        btn.textContent = 'Переключить на 3D';
-    }
-});
-
-// Wind & turb listeners for vector field
-document.getElementById('wind').addEventListener('input', () => { params.wind = parseFloat(document.getElementById('wind').value); document.getElementById('val-wind').textContent = params.wind.toFixed(1); });
-document.getElementById('turb').addEventListener('input', () => { params.turb = parseFloat(document.getElementById('turb').value); document.getElementById('val-turb').textContent = params.turb.toFixed(1); });
-
-// Bind sliders
-bindSlider('v0', 'v0');
-bindSlider('angle', 'angle', '°');
-bindSlider('h0', 'h0', 'м');
-bindSlider('mass', 'mass', 'г');
-bindSlider('area', 'area', 'дм²');
-bindSlider('ar', 'ar');
-bindSlider('cd0', 'cd0');
-bindSlider('clmax', 'clmax');
-bindSlider('wind', 'wind', 'м/с');
-bindSlider('turb', 'turb');
-
-// Optimize
-document.getElementById('optimize').addEventListener('click', function () {
-    const status = document.getElementById('opt-status');
-    status.textContent = 'Оптимизация... (0%)';
-    this.disabled = true;
-
-    const baseH0 = params.h0;
-    let bestDist = 0, bestV0 = 0, bestAngle = 0;
-    const vStart = 5, vEnd = 25, vStep = 1;
-    const aStart = 5, aEnd = 45, aStep = 2;
-    const total = Math.ceil((vEnd - vStart) / vStep + 1) * Math.ceil((aEnd - aStart) / aStep + 1);
-    let done = 0;
-
-    function runBatch() {
-        const batch = 30;
-        for (let b = 0; b < batch && done < total; b++) {
-            const v0 = vStart + Math.floor(done / Math.ceil((aEnd - aStart) / aStep + 1)) * vStep;
-            const angle = aStart + (done % Math.ceil((aEnd - aStart) / aStep + 1)) * aStep;
-            done++;
-
-            const p = new PaperPlane(v0, angle, baseH0, params.mass, params.area, params.ar, params.cd0, params.clMax);
-            const physDt = 0.005;
-            while (!p.landed && p.t < 30) p.step(physDt);
-            if (p.x > bestDist) {
-                bestDist = p.x;
-                bestV0 = v0;
-                bestAngle = angle;
-            }
-        }
-        status.textContent = `Оптимизация... (${Math.round(done / total * 100)}%)`;
-        if (done < total) {
-            setTimeout(runBatch, 0);
-        } else {
-            status.innerHTML = `Макс: <span style="color:#4ecca3">${bestDist.toFixed(1)} м</span> при V=${bestV0.toFixed(0)} м/с, α=${bestAngle}°`;
-            document.getElementById('v0').value = bestV0;
-            document.getElementById('angle').value = bestAngle;
-            params.v0 = bestV0;
-            params.angle = bestAngle;
-            document.getElementById('val-v0').textContent = bestV0;
-            document.getElementById('val-angle').textContent = bestAngle;
-            launch();
-            this.disabled = false;
-        }
-    }
-    runBatch();
-});
-
-// ============================================
-// 2D DRAWING
-// ============================================
-const canvas = document.getElementById('simCanvas');
-const ctx = canvas.getContext('2d');
-
-function resize() {
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
-    scale = Math.min(canvas.width / 60, canvas.height / 35);
-    offsetX = 60;
-    offsetY = canvas.height - 60;
-    draw();
-}
-window.addEventListener('resize', resize);
-
-function worldToScreen(x, y) {
-    return { x: offsetX + x * scale, y: offsetY - y * scale };
-}
-
-function draw() {
-    const W = canvas.width, H = canvas.height;
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#0b1026');
-    grad.addColorStop(0.6, '#1e2a4a');
-    grad.addColorStop(1, '#2d4a3e');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 1;
-    for (let xm = 0; xm <= 100; xm += 5) {
-        const p = worldToScreen(xm, 0);
-        ctx.beginPath(); ctx.moveTo(p.x, 0); ctx.lineTo(p.x, H); ctx.stroke();
-    }
-    for (let ym = 0; ym <= 50; ym += 5) {
-        const p = worldToScreen(0, ym);
-        ctx.beginPath(); ctx.moveTo(0, p.y); ctx.lineTo(W, p.y); ctx.stroke();
-    }
-
-    // Labels
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'center';
-    for (let xm = 0; xm <= 100; xm += 10) {
-        ctx.fillText(xm + 'м', worldToScreen(xm, 0).x, offsetY + 20);
-    }
-    ctx.textAlign = 'right';
-    for (let ym = 0; ym <= 50; ym += 10) {
-        ctx.fillText(ym + 'м', offsetX - 10, worldToScreen(0, ym).y + 4);
-    }
-
-    // Ground
-    const gY = worldToScreen(0, 0).y;
-    ctx.fillStyle = '#1a2f23';
-    ctx.fillRect(0, gY, W, H - gY);
-    ctx.strokeStyle = '#2d5a3f';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(W, gY); ctx.stroke();
-
-    // Old trails
-    trails.forEach(t => {
-        if (t.length < 2) return;
-        ctx.strokeStyle = 'rgba(78,204,163,0.15)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        const p0 = worldToScreen(t[0].x, t[0].y);
-        ctx.moveTo(p0.x, p0.y);
-        for (let i = 1; i < t.length; i++) {
-            const p = worldToScreen(t[i].x, t[i].y);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
-    });
-
-    // Current trail
-    if (plane && plane.trail.length > 1) {
-        ctx.strokeStyle = '#4ecca3';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        const p0 = worldToScreen(plane.trail[0].x, plane.trail[0].y);
-        ctx.moveTo(p0.x, p0.y);
-        for (let i = 1; i < plane.trail.length; i++) {
-            const p = worldToScreen(plane.trail[i].x, plane.trail[i].y);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
-    }
-
-    // Plane
-    if (plane && !plane.landed) {
-        const p = worldToScreen(plane.x, plane.y);
-        const speed = plane.getV();
-        const size = Math.max(8, 6 + speed * 0.3);
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(plane.theta);
-
-        ctx.shadowColor = 'rgba(233,69,96,0.6)';
-        ctx.shadowBlur = 15;
-
-        // Body
-        ctx.fillStyle = '#e94560';
-        ctx.beginPath();
-        ctx.moveTo(size, 0);
-        ctx.lineTo(-size * 0.6, -size * 0.35);
-        ctx.lineTo(-size * 0.4, 0);
-        ctx.lineTo(-size * 0.6, size * 0.35);
-        ctx.closePath();
-        ctx.fill();
-
-        // Wings
-        ctx.fillStyle = '#ff6b81';
-        ctx.beginPath();
-        ctx.moveTo(-size * 0.2, 0);
-        ctx.lineTo(-size * 0.7, -size * 0.9);
-        ctx.lineTo(-size * 0.4, -size * 0.1);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(-size * 0.2, 0);
-        ctx.lineTo(-size * 0.7, size * 0.9);
-        ctx.lineTo(-size * 0.4, size * 0.1);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.restore();
-
-        // Velocity vector
-        const vScale = 2;
-        ctx.strokeStyle = 'rgba(255,215,0,0.7)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x + plane.vx * vScale, p.y - plane.vy * vScale);
-        ctx.stroke();
-
-        // Alpha indicator — small arc showing current AOA
-        if (Math.abs(plane.alpha) > 0.01) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 20, -plane.theta, -(plane.theta - plane.alpha), plane.alpha > 0);
-            ctx.stroke();
-        }
-    }
-
-    // Wind indicator
-    if (params.wind !== 0) {
-        const wx = W - 80, wy = 30;
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.font = '11px monospace';
-        ctx.textAlign = 'right';
-        ctx.fillText(`Ветер: ${params.wind > 0 ? '→' : '←'} ${Math.abs(params.wind).toFixed(1)} м/с`, wx, wy);
-        ctx.strokeStyle = 'rgba(136,204,255,0.4)';
-        ctx.lineWidth = 2;
-        const dir = params.wind > 0 ? 1 : -1;
-        ctx.beginPath();
-        ctx.moveTo(wx - 15 * dir, wy - 15);
-        ctx.lineTo(wx - 15 * dir, wy - 5);
-        ctx.lineTo(wx - 5 * dir, wy - 10);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(136,204,255,0.4)';
-        ctx.fill();
-    }
-}
-
-// ============================================
-// 3D UPDATE
-// ============================================
-function updateScene() {
-    if (vectorField) recomputeVectorField(Date.now() * 0.001);
-    if (!plane || !planeMesh) return;
-
-    planeMesh.position.set(plane.x, plane.y, plane.z);
-    planeMesh.visible = true;
-
-    // 3D orientation: heading + pitch
-    const V = plane.getV();
-    if (V > 0.1) {
-        const heading = Math.atan2(plane.vz || 0, plane.vx);
-        // Visual nose direction based on pitch angle θ, not flight path
-        const target = new THREE.Vector3(
-            plane.x + Math.cos(plane.theta) * Math.cos(heading),
-            plane.y + Math.sin(plane.theta),
-            plane.z + Math.cos(plane.theta) * Math.sin(heading)
-        );
-        planeMesh.lookAt(target);
-    }
-
-    // Trail
-    if (plane.trail.length > 1) {
-        const pts = plane.trail.map(p => new THREE.Vector3(p.x, p.y, p.z));
-        trailLine.geometry.setFromPoints(pts);
-    }
-
-    if (isRunning) {
-        controls.target.lerp(new THREE.Vector3(plane.x * 0.5, plane.y * 0.3 + 5, plane.z * 0.5), 0.02);
-    }
-}
-
-function updateLiveStats() {
-    if (!plane) return;
-    const d = plane.x.toFixed(1);
-    const h = plane.y.toFixed(1);
-    const t = plane.t.toFixed(2);
-    const v = plane.getV().toFixed(1);
-    document.getElementById('s-distance').textContent = d + ' м';
-    document.getElementById('s-height').textContent = h + ' м';
-    document.getElementById('s-time').textContent = t + ' с';
-    document.getElementById('s-vfinal').textContent = v + ' м/с';
-    document.getElementById('s-vmax').textContent = plane.vMax.toFixed(1) + ' м/с';
-
-    // Alpha at launch (approximate)
-    const alphaStr = plane.alpha !== undefined ? (plane.alpha * RAD2DEG).toFixed(1) + '°' : '—';
-    document.getElementById('s-alpha').textContent = alphaStr;
-
-    // L/D estimate
-    if (plane.getV() > 0.5) {
-        const cl = plane.getCL(plane.alpha || 0);
-        const cd = plane.getCD(cl);
-        document.getElementById('s-k').textContent = cd > 0 ? (cl / cd).toFixed(1) : '—';
-    }
-
-    // Stability indicator
-    document.getElementById('s-stable').textContent = plane.Iyy ? 'OK' : '—';
-}
-
-function updateStats() { updateLiveStats(); }
-
-// ============================================
-// MAIN LOOP
-// ============================================
-function loop(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
-    lastTime = timestamp;
-
-    if (isRunning && plane && !plane.landed) {
-        const physDt = 0.005;
-        const steps = Math.max(1, Math.round(dt / physDt));
-        for (let i = 0; i < steps; i++) {
-            plane.step(physDt);
-            if (plane.landed) {
-                isRunning = false;
-                updateStats();
-                break;
-            }
-        }
-        updateLiveStats();
-    }
-
-    draw();
-
-    if (is3D) {
-        updateScene();
-        controls.update();
-        renderer.render(scene, camera);
-    }
-
-    requestAnimationFrame(loop);
-}
-
-// Resize handler for 3D
-resize();
-launch(); // auto-launch
-draw();
-requestAnimationFrame(loop);
-</script>
-
+</div>
+
+<script src="physics.js"></script>
+<script src="scene.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
