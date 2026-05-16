@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperPlane Whitepapers</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0a0a12;
+            --panel: #11111a;
+            --panel-2: #171722;
+            --text: #e7eceb;
+            --muted: #8c9497;
+            --line: rgba(255,255,255,0.10);
+            --accent: #4ecca3;
+            --accent-2: #e94560;
+            --code: #0e1518;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.62;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #7de4c2;
+        }
+
+        .page {
+            width: min(1120px, calc(100vw - 32px));
+            margin: 0 auto;
+            padding: 28px 0 56px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 0 28px;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand strong {
+            font-size: 16px;
+            letter-spacing: 0.02em;
+        }
+
+        .brand span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .back-link {
+            padding: 9px 13px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--text);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .hero {
+            padding: 34px 0 30px;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+        }
+
+        h1 {
+            margin: 0 0 14px;
+            font-size: clamp(34px, 6vw, 64px);
+            line-height: 1.04;
+            letter-spacing: 0;
+        }
+
+        .lead {
+            max-width: 820px;
+            margin: 0;
+            color: #b8c0c2;
+            font-size: 18px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .meta {
+            padding: 13px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+        }
+
+        .meta span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .meta strong {
+            display: block;
+            margin-top: 4px;
+            color: var(--accent);
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 15px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 250px minmax(0, 1fr);
+            gap: 34px;
+            align-items: start;
+            margin-top: 34px;
+        }
+
+        nav {
+            position: sticky;
+            top: 18px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.035);
+        }
+
+        nav h2 {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.10em;
+        }
+
+        nav a {
+            display: block;
+            padding: 7px 0;
+            color: #c3c8ca;
+            font-size: 14px;
+        }
+
+        section {
+            padding: 26px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        section:first-child {
+            padding-top: 0;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 26px;
+            line-height: 1.2;
+        }
+
+        h3 {
+            margin: 24px 0 8px;
+            font-size: 18px;
+            color: #f2f5f4;
+        }
+
+        p {
+            margin: 10px 0;
+            color: #c7ccce;
+        }
+
+        ul {
+            margin: 10px 0 0;
+            padding-left: 22px;
+            color: #c7ccce;
+        }
+
+        li + li {
+            margin-top: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0 6px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: rgba(255,255,255,0.05);
+            color: #f3f5f5;
+            font-size: 13px;
+        }
+
+        td {
+            color: #c7ccce;
+            font-size: 14px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        code,
+        pre {
+            font-family: "SF Mono", Consolas, monospace;
+        }
+
+        code {
+            color: #a7f3d0;
+            background: rgba(78,204,163,0.09);
+            padding: 1px 5px;
+            border-radius: 5px;
+        }
+
+        .equation {
+            margin: 14px 0;
+            padding: 14px 16px;
+            border: 1px solid rgba(78,204,163,0.22);
+            border-radius: 8px;
+            background: var(--code);
+            overflow-x: auto;
+        }
+
+        .note {
+            margin: 16px 0;
+            padding: 13px 15px;
+            border-left: 3px solid var(--accent-2);
+            background: rgba(233,69,96,0.08);
+            color: #d8dddf;
+        }
+
+        .formula-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        @media (max-width: 860px) {
+            .meta-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            nav {
+                position: static;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .page {
+                width: min(100vw - 20px, 1120px);
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 34px;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <div class="topbar">
+        <div class="brand">
+            <strong>PaperPlane</strong>
+            <span>Математическая спецификация текущей модели</span>
+        </div>
+        <a class="back-link" href="index.html">Назад к симулятору</a>
+    </div>
+
+    <header class="hero">
+        <h1>Whitepapers</h1>
+        <p class="lead">
+            Эта страница фиксирует формулы, которые сейчас используются в симуляторе:
+            геометрию планера, центр масс, локальный поток, аэродинамические коэффициенты,
+            силы, моменты, интегрирование и диагностические метрики.
+        </p>
+        <div class="meta-grid">
+            <div class="meta">
+                <span>База</span>
+                <strong>BOO 800 mm</strong>
+            </div>
+            <div class="meta">
+                <span>Профиль</span>
+                <strong>E387 Re 200k</strong>
+            </div>
+            <div class="meta">
+                <span>Размах</span>
+                <strong>0.80 m</strong>
+            </div>
+            <div class="meta">
+                <span>Масса</span>
+                <strong>170 g</strong>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav aria-label="Оглавление">
+            <h2>Разделы</h2>
+            <a href="#scope">1. Область модели</a>
+            <a href="#constants">2. Константы</a>
+            <a href="#geometry">3. Геометрия</a>
+            <a href="#mass">4. Центр масс</a>
+            <a href="#stability">5. Устойчивость</a>
+            <a href="#airflow">6. Воздушная среда</a>
+            <a href="#kinematics">7. Кинематика</a>
+            <a href="#airfoil">8. Поляры</a>
+            <a href="#forces">9. Силы и моменты</a>
+            <a href="#integration">10. Интегратор</a>
+            <a href="#diagnostics">11. Диагностика</a>
+            <a href="#optimizer">12. Оптимизация</a>
+            <a href="#limits">13. Ограничения</a>
+        </nav>
+
+        <article>
+            <section id="scope">
+                <h2>1. Область модели</h2>
+                <p>
+                    Самолет считается жестким телом. Аэродинамика считается по набору панелей:
+                    крыло, хвостовое оперение и киль. Каждая панель видит собственный локальный поток,
+                    получает свои \(C_L\), \(C_D\), \(C_m\), после чего силы и моменты суммируются на центре масс.
+                </p>
+                <p>
+                    Это приближенная инженерная модель для малых планеров. Она не заменяет CFD,
+                    X-Plane blade element model или JSBSim FDM, но дает прозрачные формулы для отладки.
+                </p>
+            </section>
+
+            <section id="constants">
+                <h2>2. Константы и единицы</h2>
+                <table>
+                    <tr><th>Величина</th><th>Значение</th><th>Комментарий</th></tr>
+                    <tr><td>\(\rho\)</td><td>\(1.225\ kg/m^3\)</td><td>плотность воздуха у земли</td></tr>
+                    <tr><td>\(g\)</td><td>\(9.81\ m/s^2\)</td><td>ускорение свободного падения</td></tr>
+                    <tr><td>\(\nu\)</td><td>\(1.5 \cdot 10^{-5}\ m^2/s\)</td><td>кинематическая вязкость воздуха</td></tr>
+                    <tr><td>\(deg2rad\)</td><td>\(\pi / 180\)</td><td>перевод градусов в радианы</td></tr>
+                    <tr><td>\(rad2deg\)</td><td>\(180 / \pi\)</td><td>перевод радиан в градусы</td></tr>
+                </table>
+            </section>
+
+            <section id="geometry">
+                <h2>3. Геометрия крыла и оперения</h2>
+                <p>
+                    Нос модели является нулевой точкой конструктора. Координаты деталей \(x_{station}\)
+                    задаются от носа назад, а в физике положение панели относительно ЦТ переводится как:
+                </p>
+                <div class="equation">
+                    \[
+                    r_x = x_{CG} - x_{station}
+                    \]
+                </div>
+
+                <h3>Площадь трапеции</h3>
+                <div class="equation">
+                    \[
+                    S = b \cdot {c_r + c_t \over 2}
+                    \]
+                </div>
+                <p>
+                    Здесь \(b\) - полный размах, \(c_r\) - корневая хорда, \(c_t\) - концевая хорда.
+                </p>
+
+                <h3>Удлинение</h3>
+                <div class="equation">
+                    \[
+                    AR = {b^2 \over S}
+                    \]
+                </div>
+
+                <h3>Сужение и средняя аэродинамическая хорда</h3>
+                <div class="equation">
+                    \[
+                    \lambda = {c_t \over c_r}
+                    \]
+                    \[
+                    \bar c = {2 \over 3} c_r {1 + \lambda + \lambda^2 \over 1 + \lambda}
+                    \]
+                </div>
+
+                <h3>Положение САХ</h3>
+                <div class="equation">
+                    \[
+                    y_{\bar c} = {b \over 2} {1 + 2\lambda \over 3(1 + \lambda)}
+                    \]
+                    \[
+                    x_{LE,\bar c} = x_{LE} + \tan(\Lambda) y_{\bar c}
+                    \]
+                    \[
+                    x_{AC} = x_{LE,\bar c} + 0.25\bar c
+                    \]
+                </div>
+
+                <h3>Панелизация</h3>
+                <p>
+                    Поверхность делится по полуразмаху на сегменты. Для локальной координаты
+                    \(\eta \in [0,1]\):
+                </p>
+                <div class="equation">
+                    \[
+                    c(\eta) = c_r + (c_t - c_r)\eta
+                    \]
+                    \[
+                    \Delta S = \Delta b \cdot c(\eta)
+                    \]
+                    \[
+                    x_{LE,panel} = x - 0.25c_r - \tan(\Lambda){b \over 2}\eta
+                    \]
+                    \[
+                    x_{AC,panel} = x_{LE,panel} + 0.25c(\eta)
+                    \]
+                </div>
+            </section>
+
+            <section id="mass">
+                <h2>4. Центр масс</h2>
+                <p>
+                    В расчетном режиме центр масс считается как сумма моментов масс деталей:
+                </p>
+                <div class="equation">
+                    \[
+                    x_{CG} = {\sum_i m_i x_i \over \sum_i m_i}
+                    \]
+                </div>
+
+                <p>Точки приложения масс:</p>
+                <div class="equation">
+                    \[
+                    x_{nose} = noseMassX
+                    \]
+                    \[
+                    x_{fuselage} = 0.48L
+                    \]
+                    \[
+                    x_{wingMass} = x_{LE,\bar c} + 0.45\bar c
+                    \]
+                    \[
+                    x_{tailMass} = x_{LE,\bar c,tail} + 0.45\bar c_{tail}
+                    \]
+                </div>
+
+                <p>
+                    Если сумма масс деталей больше заданной массы модели, все массы деталей масштабируются:
+                </p>
+                <div class="equation">
+                    \[
+                    k = {m_{model} \over \sum_i m_i}
+                    \]
+                    \[
+                    m_i' = k m_i
+                    \]
+                </div>
+
+                <p>
+                    Если сумма масс деталей меньше массы модели, остаток добавляется как payload в точку носовой массы:
+                </p>
+                <div class="equation">
+                    \[
+                    m_{payload} = \max(0, m_{model} - \sum_i m_i)
+                    \]
+                    \[
+                    x_{payload} = noseMassX
+                    \]
+                </div>
+
+                <p>В ручном режиме ЦТ задается от передней кромки крыла:</p>
+                <div class="equation">
+                    \[
+                    x_{CG} = x_{LE,wing} + x_{CG,fromWingLE}
+                    \]
+                </div>
+
+                <p>Положение ЦТ в процентах САХ:</p>
+                <div class="equation">
+                    \[
+                    CG_{\%MAC} = 100 {x_{CG} - x_{LE,\bar c} \over \bar c}
+                    \]
+                </div>
+            </section>
+
+            <section id="stability">
+                <h2>5. Статическая устойчивость</h2>
+                <p>
+                    Для V-образного хвоста эффективная площадь по тангажу уменьшается через проекцию:
+                </p>
+                <div class="equation">
+                    \[
+                    S_{tail,pitch} = S_{tail}\cos^2(\Gamma_V)
+                    \]
+                </div>
+
+                <p>Плечо хвоста и хвостовой объем:</p>
+                <div class="equation">
+                    \[
+                    l_t = x_{tail} - x_{CG}
+                    \]
+                    \[
+                    V_H = {S_{tail,pitch}\max(l_t, 0) \over S_{wing}\bar c}
+                    \]
+                </div>
+
+                <p>Нейтральная точка в текущей упрощенной модели:</p>
+                <div class="equation">
+                    \[
+                    x_{NP} = x_{AC,wing} + \bar c \cdot clamp(0.72V_H,\ 0,\ 0.65)
+                    \]
+                </div>
+
+                <p>Статический запас:</p>
+                <div class="equation">
+                    \[
+                    SM = 100 {x_{NP} - x_{CG} \over \bar c}
+                    \]
+                </div>
+            </section>
+
+            <section id="airflow">
+                <h2>6. Воздушная среда</h2>
+                <p>Полная скорость воздуха в точке:</p>
+                <div class="equation">
+                    \[
+                    \vec V_{air}(x,y,z,t) = \vec V_{wind} + \vec V_{thermal}(x,y,z) + \vec V_{turb}(x,y,z,t)
+                    \]
+                    \[
+                    \vec V_{wind} = (wind,\ 0,\ 0)
+                    \]
+                </div>
+
+                <h3>Термики</h3>
+                <p>
+                    Для каждого термика с центром \((x_0,z_0)\), радиусом \(R\), высотой \(H\)
+                    и силой \(w_0\):
+                </p>
+                <div class="equation">
+                    \[
+                    d = \sqrt{(x - x_0)^2 + (z - z_0)^2}
+                    \]
+                    \[
+                    V_{thermal,y} =
+                    \begin{cases}
+                    w_0 \cdot scale \cdot \left(1 - {d \over R}\right)^2
+                    \left(1 - {y \over H}\right), & d < R,\ 0 \le y < H \\
+                    0, & otherwise
+                    \end{cases}
+                    \]
+                </div>
+
+                <h3>Турбулентность</h3>
+                <div class="equation">
+                    \[
+                    h_f = 0.35 + 0.65e^{-\max(y,0)/10}
+                    \]
+                    \[
+                    A = 0.16 \cdot turb \cdot h_f
+                    \]
+                    \[
+                    p_1 = 0.31x + 0.11y + 0.23z + 0.85t
+                    \]
+                    \[
+                    p_2 = 0.17x - 0.19y + 0.29z + 1.20t
+                    \]
+                    \[
+                    p_3 = 0.27x + 0.07y - 0.21z + 0.70t
+                    \]
+                    \[
+                    \vec V_{turb} =
+                    \left(
+                    A\sin p_1 + 0.35A\sin(0.63p_2 + 1.7),\
+                    0.25A\sin(p_2 + 2.1),\
+                    0.60A\sin(p_3 - 0.8)
+                    \right)
+                    \]
+                </div>
+                <p class="note">
+                    Турбулентность задается как скорость воздушной массы, а не как добавочная сила.
+                    Поэтому она не должна работать как скрытая подъемная сила.
+                </p>
+            </section>
+
+            <section id="kinematics">
+                <h2>7. Кинематика и локальный угол атаки</h2>
+                <h3>Начальное состояние</h3>
+                <div class="equation">
+                    \[
+                    v_x(0) = v_0\cos(\theta_0)
+                    \]
+                    \[
+                    v_y(0) = v_0\sin(\theta_0)
+                    \]
+                    \[
+                    v_z(0) = 0
+                    \]
+                </div>
+
+                <h3>Скорость точки панели</h3>
+                <div class="equation">
+                    \[
+                    \vec V_{point} = \vec V_{CG} + \vec \omega_{world} \times \vec r_{world}
+                    \]
+                    \[
+                    \vec V_{rel,world} = \vec V_{point} - \vec V_{air}
+                    \]
+                    \[
+                    \vec V_{rel,body} = q^{-1}\vec V_{rel,world}q
+                    \]
+                </div>
+
+                <h3>Базис поверхности</h3>
+                <p>Для горизонтальной поверхности до диэдра:</p>
+                <div class="equation">
+                    \[
+                    \hat f = (\cos i,\ \sin i,\ 0)
+                    \]
+                    \[
+                    \hat n = (-\sin i,\ \cos i,\ 0)
+                    \]
+                    \[
+                    \hat s = (0,\ 0,\ side)
+                    \]
+                </div>
+
+                <p>Для вертикальной поверхности:</p>
+                <div class="equation">
+                    \[
+                    \hat f = (\cos i,\ 0,\ \sin i)
+                    \]
+                    \[
+                    \hat n = (-\sin i,\ 0,\ \cos i)
+                    \]
+                    \[
+                    \hat s = (0,\ 1,\ 0)
+                    \]
+                </div>
+
+                <h3>Угол атаки панели</h3>
+                <div class="equation">
+                    \[
+                    V_f = \vec V_{rel,body} \cdot \hat f
+                    \]
+                    \[
+                    V_n = \vec V_{rel,body} \cdot \hat n
+                    \]
+                    \[
+                    \alpha = clamp\left(\arctan2(-V_n,\ V_f),\ -60^\circ,\ 60^\circ\right)
+                    \]
+                </div>
+            </section>
+
+            <section id="airfoil">
+                <h2>8. Аэродинамические коэффициенты</h2>
+                <h3>Табличная поляра</h3>
+                <p>
+                    Для профиля E387 используется таблица \(C_L\), \(C_D\), \(C_m\).
+                    Между соседними точками применяется линейная интерполяция:
+                </p>
+                <div class="equation">
+                    \[
+                    t = {\alpha - \alpha_i \over \alpha_{i+1} - \alpha_i}
+                    \]
+                    \[
+                    C(\alpha) = C_i + (C_{i+1} - C_i)t
+                    \]
+                </div>
+
+                <p>За пределами таблицы применяется мягкая экстраполяция:</p>
+                <div class="equation">
+                    \[
+                    e = |\alpha_{deg} - \alpha_{edge}|
+                    \]
+                    \[
+                    d = clamp\left(1 - {e \over 45},\ 0.35,\ 1\right)
+                    \]
+                    \[
+                    C_L' = dC_L
+                    \]
+                    \[
+                    C_D' = C_D + 0.0009e^2
+                    \]
+                    \[
+                    C_m' = C_m - 0.0015(\alpha_{deg} - \alpha_{edge})
+                    \]
+                </div>
+
+                <p>Если табличный \(C_D\) не содержит индуктивное сопротивление:</p>
+                <div class="equation">
+                    \[
+                    C_D = C_{D,profile} + {C_L^2 \over \pi \cdot 0.78 \cdot \max(AR, 0.8)}
+                    \]
+                </div>
+
+                <h3>Аналитическая модель для простых профилей</h3>
+                <div class="equation">
+                    \[
+                    \alpha_e = \alpha - \alpha_{0L}
+                    \]
+                    \[
+                    C_{L,linear} = C_{L\alpha}\alpha_e
+                    \]
+                    \[
+                    C_{L,stall} = clamp(C_{L\alpha}\alpha_{stall},\ -C_{L,max},\ C_{L,max})
+                    \]
+                </div>
+
+                <p>До срыва:</p>
+                <div class="equation">
+                    \[
+                    C_L = clamp(C_{L,linear},\ -C_{L,max},\ C_{L,max})
+                    \]
+                </div>
+
+                <p>После срыва:</p>
+                <div class="equation">
+                    \[
+                    excess = |\alpha_e| - \alpha_{stall}
+                    \]
+                    \[
+                    d = clamp\left(1 - {excess \over 55^\circ},\ 0.42,\ 1\right)
+                    \]
+                    \[
+                    C_L = sign(\alpha_e)|C_{L,stall}|d
+                    \]
+                </div>
+
+                <p>Сопротивление и момент:</p>
+                <div class="equation">
+                    \[
+                    C_{D,i} = {C_L^2 \over \pi \cdot 0.75 \cdot \max(AR, 0.8)}
+                    \]
+                    \[
+                    s_d = {\max(0,\ |\alpha_e| - \alpha_{stall}) \over 35^\circ}
+                    \]
+                    \[
+                    C_D = C_{D0} + C_{D,i} + 0.07s_d^2
+                    \]
+                    \[
+                    C_m = C_{m0} - 0.025\alpha_e
+                    \]
+                </div>
+            </section>
+
+            <section id="forces">
+                <h2>9. Силы и моменты</h2>
+                <h3>Динамическое давление и число Рейнольдса</h3>
+                <div class="equation">
+                    \[
+                    q = {1 \over 2}\rho V^2
+                    \]
+                    \[
+                    Re = {Vc \over \nu}
+                    \]
+                </div>
+
+                <h3>Подъемная сила и сопротивление панели</h3>
+                <div class="equation">
+                    \[
+                    L = qSC_L
+                    \]
+                    \[
+                    D = qSC_D
+                    \]
+                </div>
+
+                <p>Направление подъемной силы берется как нормаль поверхности, очищенная от компоненты вдоль потока:</p>
+                <div class="equation">
+                    \[
+                    \hat v = {\vec V_{rel,body} \over |\vec V_{rel,body}|}
+                    \]
+                    \[
+                    \hat l = normalize(\hat n - \hat v(\hat n \cdot \hat v))
+                    \]
+                </div>
+
+                <p>Сила в системе тела:</p>
+                <div class="equation">
+                    \[
+                    \vec F_{body} = L\hat l - D\hat v
+                    \]
+                    \[
+                    \vec F_{world} = q_{rot}\vec F_{body}q_{rot}^{-1}
+                    \]
+                </div>
+
+                <h3>Момент панели</h3>
+                <div class="equation">
+                    \[
+                    \vec M_{Cm,body} = \hat a \cdot qScC_m
+                    \]
+                    \[
+                    \hat a =
+                    \begin{cases}
+                    (0,\ 0,\ 1), & horizontal \\
+                    (0,\ 1,\ 0), & vertical
+                    \end{cases}
+                    \]
+                    \[
+                    \vec \tau_{surface} = \vec r \times \vec F_{world} + \vec M_{Cm,world}
+                    \]
+                </div>
+
+                <h3>Суммарные сила и момент</h3>
+                <div class="equation">
+                    \[
+                    \vec F_{total} = (0,\ -mg,\ 0) + \sum_j \vec F_j
+                    \]
+                    \[
+                    \vec \tau_{total} = \sum_j \vec \tau_j
+                    \]
+                </div>
+
+                <h3>Демпфирование тангажа</h3>
+                <div class="equation">
+                    \[
+                    M_q = q_{ref}S_{wing}\bar c(-0.08\omega_z)
+                    \]
+                    \[
+                    q_{ref} = {1 \over 2}\rho V_{CG,rel}^2
+                    \]
+                </div>
+
+                <p>При отсутствии турбулентности боковые силы дополнительно приглушаются:</p>
+                <div class="equation">
+                    \[
+                    k_{lat} =
+                    \begin{cases}
+                    0.45, & turb > 0 \\
+                    0.05, & turb = 0
+                    \end{cases}
+                    \]
+                    \[
+                    F_z \leftarrow k_{lat}F_z,\quad
+                    \tau_x \leftarrow k_{lat}\tau_x,\quad
+                    \tau_y \leftarrow k_{lat}\tau_y
+                    \]
+                </div>
+            </section>
+
+            <section id="integration">
+                <h2>10. Интегратор движения</h2>
+                <p>
+                    Шаг симуляции дробится до \(dt \le 0.001s\). Дальше используется явная пошаговая схема.
+                </p>
+                <div class="equation">
+                    \[
+                    \vec a = {\vec F_{total} \over m}
+                    \]
+                    \[
+                    \vec v_{t+dt} = \vec v_t + \vec a dt
+                    \]
+                    \[
+                    \vec x_{t+dt} = \vec x_t + \vec v_{t+dt}dt
+                    \]
+                </div>
+
+                <h3>Тензор инерции в диагональном приближении</h3>
+                <div class="equation">
+                    \[
+                    h = \max(0.18\bar c,\ 0.015)
+                    \]
+                    \[
+                    I_x = {m(b^2 + h^2) \over 12}
+                    \]
+                    \[
+                    I_y = {m(L^2 + h^2) \over 12}
+                    \]
+                    \[
+                    I_z = {m(L^2 + b^2) \over 12}
+                    \]
+                </div>
+
+                <h3>Угловое ускорение</h3>
+                <div class="equation">
+                    \[
+                    \dot\omega_x = 0.22 \cdot clamp\left({\tau_x \over I_x},\ -60,\ 60\right)
+                    \]
+                    \[
+                    \dot\omega_y = 0.22 \cdot clamp\left({\tau_y \over I_y},\ -60,\ 60\right)
+                    \]
+                    \[
+                    \dot\omega_z = clamp\left({\tau_z \over I_z},\ -60,\ 60\right)
+                    \]
+                </div>
+
+                <p>Обновление и демпфирование угловых скоростей:</p>
+                <div class="equation">
+                    \[
+                    \omega_i \leftarrow clamp(\omega_i + \dot\omega_i dt,\ -8,\ 8)
+                    \]
+                    \[
+                    \omega_x,\omega_y \leftarrow e^{-8dt}\omega_x,\ e^{-8dt}\omega_y
+                    \]
+                    \[
+                    \omega_z \leftarrow e^{-4dt}\omega_z
+                    \]
+                </div>
+
+                <h3>Кватернион ориентации</h3>
+                <div class="equation">
+                    \[
+                    \dot q = q \otimes (0,\omega_x,\omega_y,\omega_z)
+                    \]
+                    \[
+                    q_{t+dt} = normalize(q_t + 0.5\dot q dt)
+                    \]
+                </div>
+
+                <p>Угол траектории:</p>
+                <div class="equation">
+                    \[
+                    \gamma = \arctan2(v_y,\ \sqrt{v_x^2 + v_z^2})
+                    \]
+                </div>
+            </section>
+
+            <section id="diagnostics">
+                <h2>11. Диагностические метрики</h2>
+                <div class="formula-list">
+                    <div class="equation">
+                        \[
+                        V = \sqrt{v_x^2 + v_y^2 + v_z^2}
+                        \]
+                    </div>
+                    <div class="equation">
+                        \[
+                        {L \over D} = {\sum_j L_j \over \sum_j D_j}
+                        \]
+                    </div>
+                    <div class="equation">
+                        \[
+                        W_S = {1000m \over 100S}
+                        \]
+                        <p>\(W_S\) выводится в \(g/dm^2\).</p>
+                    </div>
+                    <div class="equation">
+                        \[
+                        V_{stall} = \sqrt{{2mg \over \rho S C_{L,max}}}
+                        \]
+                    </div>
+                    <div class="equation">
+                        \[
+                        pitch = \arctan2(f_y,\ \sqrt{f_x^2 + f_z^2})
+                        \]
+                        \[
+                        yaw = \arctan2(f_z,\ f_x)
+                        \]
+                    </div>
+                </div>
+            </section>
+
+            <section id="optimizer">
+                <h2>12. Оптимизация ЦТ и хвоста</h2>
+                <p>
+                    Кнопка оптимизации перебирает ручной \(x_{CG,fromWingLE}\) и угол хвоста.
+                    Целевая функция сейчас - максимальная дальность при фильтре невалидных траекторий.
+                </p>
+                <div class="equation">
+                    \[
+                    score =
+                    \begin{cases}
+                    x_{landing}, & valid \\
+                    -\infty, & invalid
+                    \end{cases}
+                    \]
+                </div>
+
+                <p>Траектория считается невалидной, если:</p>
+                <div class="equation">
+                    \[
+                    \min(v_x) < 0.2
+                    \]
+                    \[
+                    y_{max} > h_0 + 12
+                    \]
+                    \[
+                    pitch_{max} - pitch_{min} > 140^\circ
+                    \]
+                </div>
+
+                <p>
+                    Поиск идет в два прохода: грубая сетка \(4mm / 0.5^\circ\),
+                    затем точная сетка вокруг лучшего результата \(1mm / 0.1^\circ\).
+                </p>
+            </section>
+
+            <section id="limits">
+                <h2>13. Текущие ограничения</h2>
+                <ul>
+                    <li>Нет полноценной нестационарной аэродинамики и динамического срыва.</li>
+                    <li>Нет гибкости крыла, фюзеляжа и V-оперения.</li>
+                    <li>Поляра E387 задана для одной области Re, интерполяции по Re пока нет.</li>
+                    <li>Киль и V-tail сведены к простым панелям без точной интерференции.</li>
+                    <li>Интегратор простой и малошаговый; это удобно для отладки, но не финальная FDM-схема.</li>
+                    <li>BOO-пресет пока не валидирован по реальным логам полета.</li>
+                </ul>
+            </section>
+        </article>
+    </div>
+</main>
+</body>
+</html>

@@ -319,6 +319,27 @@ button.accent:hover {
     box-shadow: 0 6px 20px rgba(78, 204, 163, 0.35);
 }
 
+.nav-button {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    color: #aaa;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.nav-button:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
 button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
